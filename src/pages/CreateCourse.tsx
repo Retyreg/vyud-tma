@@ -1,4 +1,5 @@
-import { useState, FC } from 'react';
+import { useState } from 'react';
+import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -18,6 +19,21 @@ const CreateCourse: FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Безопасный вызов HapticFeedback
+  const triggerHaptic = (type: 'light' | 'medium' | 'success' | 'error') => {
+    try {
+      if (WebApp?.HapticFeedback) {
+        if (type === 'success' || type === 'error') {
+          WebApp.HapticFeedback.notificationOccurred(type);
+        } else {
+          WebApp.HapticFeedback.impactOccurred(type);
+        }
+      }
+    } catch (e) {
+      console.log('Haptic feedback not available');
+    }
+  };
+
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
     else navigate('/');
@@ -25,20 +41,20 @@ const CreateCourse: FC = () => {
 
   const handleNext = () => {
     if (step === 1 && !text.trim()) {
-      WebApp.HapticFeedback.notificationOccurred('error');
+      triggerHaptic('error');
       return;
     }
     setStep(step + 1);
-    WebApp.HapticFeedback.impactOccurred('light');
+    triggerHaptic('light');
   };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
-    WebApp.HapticFeedback.impactOccurred('medium');
+    triggerHaptic('medium');
     
     const user = WebApp?.initDataUnsafe?.user;
-    const telegram_id = user?.id || 5701645456; // Фолбэк на ваш ID
+    const telegram_id = user?.id || 5701645456; 
     const username = user?.username || 'dmitrijvatutov';
 
     try {
@@ -66,7 +82,7 @@ const CreateCourse: FC = () => {
       const result = await response.json();
       
       if (result.success) {
-        WebApp.HapticFeedback.notificationOccurred('success');
+        triggerHaptic('success');
         navigate(`/course/${result.test_id}`);
       }
 
@@ -74,7 +90,7 @@ const CreateCourse: FC = () => {
       console.error('Generation error:', err);
       setError(err.message);
       setIsGenerating(false);
-      WebApp.HapticFeedback.notificationOccurred('error');
+      triggerHaptic('error');
     }
   };
 
@@ -159,7 +175,7 @@ const CreateCourse: FC = () => {
                 {['easy', 'medium', 'hard'].map((lvl) => (
                   <button
                     key={lvl}
-                    onClick={() => setDifficulty(lvl)}
+                    onClick={() => { setDifficulty(lvl); triggerHaptic('light'); }}
                     style={{
                       padding: '10px',
                       borderRadius: 'var(--radius-sm)',

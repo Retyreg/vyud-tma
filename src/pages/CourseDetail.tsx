@@ -23,6 +23,21 @@ const CourseDetail: FC = () => {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [showResults, setShowResults] = useState(false);
 
+  // Безопасный вызов HapticFeedback
+  const triggerHaptic = (type: 'light' | 'medium' | 'success' | 'error') => {
+    try {
+      if (WebApp?.HapticFeedback) {
+        if (type === 'success' || type === 'error') {
+          WebApp.HapticFeedback.notificationOccurred(type);
+        } else {
+          WebApp.HapticFeedback.impactOccurred(type);
+        }
+      }
+    } catch (e) {
+      console.log('Haptic feedback not available');
+    }
+  };
+
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -52,7 +67,7 @@ const CourseDetail: FC = () => {
   const handleOptionSelect = (questionIndex: number, optionIndex: number) => {
     if (showResults) return;
     setAnswers({ ...answers, [questionIndex]: optionIndex });
-    WebApp.HapticFeedback.impactOccurred('light');
+    triggerHaptic('light');
   };
 
   const calculateScore = () => {
@@ -151,7 +166,7 @@ const CourseDetail: FC = () => {
           disabled={Object.keys(answers).length < quiz.questions.length}
           onClick={() => {
             setShowResults(true);
-            WebApp.HapticFeedback.notificationOccurred('success');
+            triggerHaptic('success');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
