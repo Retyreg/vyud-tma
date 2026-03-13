@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { ChevronLeft, Send, Sparkles, AlertCircle } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://38.180.229.254:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://38.180.229.254:8000/api';
 const API_KEY = 'vyud_api_key_vNbMtkZxhwmNeeZkALxCzb-Xy6JbJiMnxSY4jk2_aWY';
 
 const CreateCourse: FC = () => {
