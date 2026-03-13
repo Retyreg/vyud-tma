@@ -16,7 +16,7 @@ export interface Quiz {
 }
 
 // ВАШ ID для тестов в браузере (подставьте свой, чтобы видеть свои данные в Chrome)
-const MOCK_USER_ID = 485123456; 
+const MOCK_USER_ID = 5701645456; 
 
 export const useSupabaseData = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
