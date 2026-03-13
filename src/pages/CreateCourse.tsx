@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import type { FC } from 'react';
+import { useState, FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ChevronLeft, Send, Sparkles, AlertCircle } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://38.180.229.254:8000/api';
+const API_KEY = 'vyud_api_key_vNbMtkZxhwmNeeZkALxCzb-Xy6JbJiMnxSY4jk2_aWY';
 
 const CreateCourse: FC = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const CreateCourse: FC = () => {
   const [numQuestions, setNumQuestions] = useState(5);
   const [language, setLanguage] = useState('ru');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
@@ -23,7 +26,6 @@ const CreateCourse: FC = () => {
   const handleNext = () => {
     if (step === 1 && !text.trim()) {
       WebApp.HapticFeedback.notificationOccurred('error');
-      alert('Пожалуйста, введите текст или учебный материал');
       return;
     }
     setStep(step + 1);
@@ -32,14 +34,48 @@ const CreateCourse: FC = () => {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
+    setError(null);
     WebApp.HapticFeedback.impactOccurred('medium');
     
-    setTimeout(() => {
+    const user = WebApp?.initDataUnsafe?.user;
+    const telegram_id = user?.id || 5701645456; // Фолбэк на ваш ID
+    const username = user?.username || 'dmitrijvatutov';
+
+    try {
+      const response = await fetch(`${API_URL}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY
+        },
+        body: JSON.stringify({
+          telegram_id,
+          username,
+          text,
+          num_questions: numQuestions,
+          difficulty,
+          language
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Ошибка генерации');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        WebApp.HapticFeedback.notificationOccurred('success');
+        navigate(`/course/${result.test_id}`);
+      }
+
+    } catch (err: any) {
+      console.error('Generation error:', err);
+      setError(err.message);
       setIsGenerating(false);
-      WebApp.HapticFeedback.notificationOccurred('success');
-      alert('Запрос отправлен! Скоро тест появится в вашем списке.');
-      navigate('/');
-    }, 3000);
+      WebApp.HapticFeedback.notificationOccurred('error');
+    }
   };
 
   if (isGenerating) {
@@ -51,7 +87,7 @@ const CreateCourse: FC = () => {
         </div>
         <div>
           <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Магия AI в процессе...</h2>
-          <p className="text-muted">Превращаем ваш текст в интерактивный курс</p>
+          <p className="text-muted">Это может занять до 30 секунд. Пожалуйста, не закрывайте приложение.</p>
         </div>
       </div>
     );
@@ -69,6 +105,15 @@ const CreateCourse: FC = () => {
       <div style={{ width: '100%', height: '6px', background: 'var(--color-border)', borderRadius: '3px', overflow: 'hidden' }}>
         <div style={{ width: `${(step / 3) * 100}%`, height: '100%', background: 'var(--color-primary)', transition: 'width 0.3s ease' }}></div>
       </div>
+
+      {error && (
+        <Card style={{ border: '1px solid var(--color-danger)', backgroundColor: '#fff1f1' }}>
+          <CardContent style={{ padding: '12px', color: 'var(--color-danger)', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <AlertCircle size={18} />
+            {error}
+          </CardContent>
+        </Card>
+      )}
 
       {step === 1 && (
         <Card>
@@ -90,7 +135,7 @@ const CreateCourse: FC = () => {
                 color: 'var(--color-text-primary)',
                 resize: 'none'
               }}
-              placeholder="Например: История Древнего Рима или текст вашей презентации..."
+              placeholder="Например: Основы квантовой физики или текст вашей статьи..."
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
@@ -164,16 +209,18 @@ const CreateCourse: FC = () => {
           </CardHeader>
           <CardContent>
             <div style={{ background: 'var(--color-background)', padding: '15px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' }}>
-              <p style={{ fontSize: '14px', marginBottom: '8px' }}><b>Материал:</b> {text.substring(0, 100)}...</p>
+              <p style={{ fontSize: '14px', marginBottom: '8px' }}><b>Материал:</b> {text.substring(0, 50)}...</p>
               <p style={{ fontSize: '14px', marginBottom: '8px' }}><b>Сложность:</b> {difficulty}</p>
               <p style={{ fontSize: '14px' }}><b>Вопросов:</b> {numQuestions}</p>
             </div>
+            
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(79, 70, 229, 0.1)', padding: '12px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' }}>
               <AlertCircle size={18} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
               <p style={{ fontSize: '12px', color: 'var(--color-primary)' }}>
                 С вашего баланса будет списан <b>1 кредит</b> после успешной генерации.
               </p>
             </div>
+
             <Button onClick={handleGenerate} fullWidth variant="primary">
               <Send size={18} style={{ marginRight: '8px' }} />
               Сгенерировать курс
