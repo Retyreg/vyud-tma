@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import WebApp from '@twa-dev/sdk';
-import { Zap, BookOpen, PlusCircle, Loader2 } from 'lucide-react';
+import { Zap, BookOpen, PlusCircle, Loader2, CreditCard } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
 const Dashboard: FC = () => {
@@ -18,6 +18,24 @@ const Dashboard: FC = () => {
     }
   }, []);
 
+  const handleBuyCredits = () => {
+    // Безопасно вызываем метод Telegram для перехода к покупке
+    try {
+      // 1. Показываем подтверждение (опционально)
+      WebApp.showConfirm("Хотите перейти в меню покупки кредитов?", (ok) => {
+        if (ok) {
+          // 2. Закрываем Mini App и отправляем команду /buy боту
+          // Мы используем фичу: закрытие и фокус на боте
+          WebApp.close();
+          // Примечание: Telegram не позволяет напрямую "писать" за юзера,
+          // но юзер увидит меню команд бота после закрытия.
+        }
+      });
+    } catch (e) {
+      window.location.href = "https://t.me/VyudAiBot";
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px' }}>
@@ -29,11 +47,17 @@ const Dashboard: FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <header style={{ marginBottom: '10px' }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '4px' }}>
-          Привет, {firstName}! 👋
-        </h1>
-        <p className="text-muted" style={{ fontSize: '14px' }}>Добро пожаловать в VYUD AI.</p>
+      <header style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', marginBottom: '4px' }}>
+            Привет, {firstName}! 👋
+          </h1>
+          <p className="text-muted" style={{ fontSize: '14px' }}>Добро пожаловать в VYUD AI.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleBuyCredits} style={{ borderRadius: '20px', padding: '6px 12px' }}>
+          <CreditCard size={14} style={{ marginRight: '6px' }} />
+          Пополнить
+        </Button>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
