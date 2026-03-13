@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -14,7 +14,7 @@ interface Question {
   question_type: string;
 }
 
-const CourseDetail: React.FC = () => {
+const CourseDetail: FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,6 @@ const CourseDetail: React.FC = () => {
 
         if (error) throw error;
         
-        // Парсим вопросы, если они в формате строки JSON
         if (data && typeof data.questions === 'string') {
           data.questions = JSON.parse(data.questions);
         }
@@ -70,8 +69,6 @@ const CourseDetail: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
-      
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <button onClick={() => navigate('/')} style={{ padding: '8px', background: 'var(--color-surface)', borderRadius: '50%', border: '1px solid var(--color-border)', display: 'flex' }}>
           <ChevronLeft size={20} />
@@ -79,7 +76,6 @@ const CourseDetail: React.FC = () => {
         <h1 style={{ fontSize: '20px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quiz.title}</h1>
       </div>
 
-      {/* Список вопросов */}
       {quiz.questions.map((q: Question, qIndex: number) => (
         <Card key={qIndex} style={{ 
           border: showResults 
@@ -104,10 +100,10 @@ const CourseDetail: React.FC = () => {
               
               if (showResults) {
                 if (isCorrect) {
-                  bgColor = '#d1fae5'; // success light
+                  bgColor = '#d1fae5';
                   borderColor = 'var(--color-success)';
                 } else if (isSelected && !isCorrect) {
-                  bgColor = '#fee2e2'; // danger light
+                  bgColor = '#fee2e2';
                   borderColor = 'var(--color-danger)';
                 }
               }
@@ -147,7 +143,6 @@ const CourseDetail: React.FC = () => {
         </Card>
       ))}
 
-      {/* Footer Actions */}
       {!showResults ? (
         <Button 
           fullWidth 
@@ -175,7 +170,6 @@ const CourseDetail: React.FC = () => {
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 };

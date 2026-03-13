@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -6,7 +6,7 @@ import WebApp from '@twa-dev/sdk';
 import { Zap, BookOpen, PlusCircle, Loader2 } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
-const Dashboard: React.FC = () => {
+const Dashboard: FC = () => {
   const { profile, quizzes, loading, error } = useSupabaseData();
   const [firstName, setFirstName] = useState('Студент');
   const navigate = useNavigate();
