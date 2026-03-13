@@ -1,4 +1,5 @@
-import { useState, FC } from 'react';
+import { useState } from 'react';
+import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';

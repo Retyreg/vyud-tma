@@ -1,4 +1,5 @@
-import { useEffect, useState, FC } from 'react';
+import { useEffect, useState } from 'react';
+import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -28,8 +29,6 @@ const Dashboard: FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      
-      {/* Приветствие */}
       <header style={{ marginBottom: '10px' }}>
         <h1 style={{ fontSize: '24px', marginBottom: '4px' }}>
           Привет, {firstName}! 👋
@@ -37,9 +36,7 @@ const Dashboard: FC = () => {
         <p className="text-muted" style={{ fontSize: '14px' }}>Добро пожаловать в VYUD AI.</p>
       </header>
 
-      {/* Статистика (Кредиты и Стрик) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        
         <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <Zap size={28} color="var(--color-primary)" style={{ marginBottom: '8px' }} />
           <h3 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>{profile?.credits ?? 0}</h3>
@@ -56,10 +53,8 @@ const Dashboard: FC = () => {
           <h3 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>{profile?.current_streak ?? 0}</h3>
           <p className="text-muted" style={{ fontSize: '12px', margin: '0' }}>Стрик (дней)</p>
         </Card>
-
       </div>
 
-      {/* Главное действие CTA */}
       <Card style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)', color: 'white', border: 'none' }}>
         <CardHeader style={{ marginBottom: '12px' }}>
           <CardTitle style={{ color: 'white' }}>Новый тест</CardTitle>
@@ -79,10 +74,8 @@ const Dashboard: FC = () => {
         </CardContent>
       </Card>
 
-      {/* Недавние курсы */}
       <div>
         <h2 style={{ fontSize: '18px', marginBottom: '12px' }}>Мои последние тесты</h2>
-        
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {quizzes.length > 0 ? quizzes.map((quiz) => (
             <Card 
@@ -113,7 +106,6 @@ const Dashboard: FC = () => {
           ⚠️ Ошибка синхронизации: {error}
         </div>
       )}
-
     </div>
   );
 };

@@ -1,4 +1,5 @@
-import { useEffect, useState, FC } from 'react';
+import { useEffect, useState } from 'react';
+import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';

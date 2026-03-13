@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react';
+import type { FC, HTMLAttributes } from 'react';
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {}
 
