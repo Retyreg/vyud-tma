@@ -15,6 +15,9 @@ export interface Quiz {
   questions: any;
 }
 
+// ВАШ ID для тестов в браузере (подставьте свой, чтобы видеть свои данные в Chrome)
+const MOCK_USER_ID = 485123456; 
+
 export const useSupabaseData = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -25,28 +28,33 @@ export const useSupabaseData = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const user = WebApp?.initDataUnsafe?.user;
         
-        if (!user) {
-          setError('User data not available (Not in Telegram?)');
-          setLoading(false);
-          return;
+        // Пытаемся получить пользователя из Telegram
+        let user = WebApp?.initDataUnsafe?.user;
+        let telegram_id: number;
+        let user_email: string;
+
+        if (user) {
+          telegram_id = user.id;
+          user_email = `${user.username || `user${user.id}`}@telegram.io`;
+        } else {
+          // Если мы в браузере (не в Telegram), используем Mock-данные
+          console.warn('Telegram user not found, using mock data for development');
+          telegram_id = MOCK_USER_ID;
+          user_email = `dmitrijvatutov@telegram.io`; // Замените на вашу почту из Supabase если нужно
         }
 
-        const telegram_id = user.id;
-        const user_email = `${user.username || `user${user.id}`}@telegram.io`;
-
-        // 1. Получаем профиль из users_credits
+        // 1. Получаем профиль
         const { data: profileData, error: profileError } = await supabase
           .from('users_credits')
           .select('credits, current_streak, total_generations')
           .eq('telegram_id', telegram_id)
           .single();
 
-        if (profileError) throw profileError;
+        if (profileError && profileData) throw profileError;
         setProfile(profileData);
 
-        // 2. Получаем квизы пользователя
+        // 2. Получаем квизы (ищем и по email, и по id для надежности)
         const { data: quizzesData, error: quizzesError } = await supabase
           .from('quizzes')
           .select('id, title, created_at, questions')
@@ -59,7 +67,10 @@ export const useSupabaseData = () => {
 
       } catch (err: any) {
         console.error('Supabase fetch error:', err);
-        setError(err.message);
+        // Не блокируем интерфейс ошибкой, если данных просто нет (новый пользователь)
+        if (err.code !== 'PGRST116') { 
+            setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
