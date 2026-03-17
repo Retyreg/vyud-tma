@@ -39,11 +39,13 @@ export const useSupabaseData = () => {
           telegram_id = user.id;
           username = user.username;
           user_email = `${user.username || `user${user.id}`}@telegram.io`;
-        } else {
-          console.warn('Telegram user not found, using mock data for development');
-          telegram_id = MOCK_USER_ID;
+        } else if (import.meta.env.DEV) {
+          console.warn('Telegram user not found, using mock data for local development');
+          telegram_id = 5701645456;
           username = 'dmitrijvatutov';
           user_email = `dmitrijvatutov@telegram.io`;
+        } else {
+          throw new Error('Пожалуйста, откройте приложение внутри Telegram');
         }
 
         // 1. Получаем профиль через наш backend API

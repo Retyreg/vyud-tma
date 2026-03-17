@@ -54,8 +54,14 @@ const CreateCourse: FC = () => {
     triggerHaptic('medium');
     
     const user = WebApp?.initDataUnsafe?.user;
-    const telegram_id = user?.id || 5701645456; 
-    const username = user?.username || 'dmitrijvatutov';
+    const telegram_id = user?.id || (import.meta.env.DEV ? 5701645456 : 0); 
+    const username = user?.username || (import.meta.env.DEV ? 'dmitrijvatutov' : 'user');
+
+    if (!telegram_id) {
+      setError('Пожалуйста, откройте приложение внутри Telegram');
+      setIsGenerating(false);
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/generate`, {

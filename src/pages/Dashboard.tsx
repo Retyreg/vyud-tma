@@ -28,7 +28,8 @@ const Dashboard: FC = () => {
   };
 
   const getInviteLink = () => {
-    const userId = WebApp?.initDataUnsafe?.user?.id || 'demo';
+    const user = WebApp?.initDataUnsafe?.user;
+    const userId = user?.id || (import.meta.env.DEV ? 5701645456 : 'error');
     return `https://t.me/VyudAiBot?start=inv_${userId}`;
   };
 
@@ -68,7 +69,12 @@ const Dashboard: FC = () => {
   const executePayment = async (planId: string) => {
     try {
       setIsBuying(true);
-      const telegram_id = WebApp?.initDataUnsafe?.user?.id || 5701645456;
+      const user = WebApp?.initDataUnsafe?.user;
+      const telegram_id = user?.id || (import.meta.env.DEV ? 5701645456 : 0);
+
+      if (!telegram_id) {
+        throw new Error('Пожалуйста, откройте приложение внутри Telegram');
+      }
 
       const response = await fetch(`${API_URL}/invoice`, {
         method: 'POST',
