@@ -4,12 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import WebApp from '@twa-dev/sdk';
-import { Zap, BookOpen, PlusCircle, Loader2, CreditCard } from 'lucide-react';
+import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const Dashboard: FC = () => {
   const { profile, quizzes, loading, error } = useSupabaseData();
   const [firstName, setFirstName] = useState('Студент');
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,16 +24,102 @@ const Dashboard: FC = () => {
   }, []);
 
   const handleBuyCredits = () => {
+    setIsBuyModalOpen(true);
+  };
+
+  const executePayment = async (planId: string) => {
     try {
-      WebApp.showConfirm("Хотите перейти в меню покупки кредитов?", (ok) => {
-        if (ok) {
-          WebApp.close();
-        }
+      setIsBuying(true);
+      const telegram_id = WebApp?.initDataUnsafe?.user?.id || 5701645456;
+
+      const response = await fetch(`${API_URL}/invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'x-telegram-init-data': WebApp?.initData || ''
+        },
+        body: JSON.stringify({
+          telegram_id,
+          plan_id: planId
+        })
       });
-    } catch (e) {
-      window.location.href = "https://t.me/VyudAiBot";
+
+      if (!response.ok) {
+        throw new Error('Failed to generate invoice');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.invoice_link) {
+        WebApp.openInvoice(data.invoice_link, (status) => {
+          if (status === 'paid') {
+            WebApp.showAlert("Оплата успешна! Кредиты будут зачислены через несколько секунд. Обновите страницу.");
+            setIsBuyModalOpen(false);
+          } else if (status === 'failed') {
+            WebApp.showAlert("Ошибка оплаты.");
+          }
+        });
+      }
+    } catch (e: any) {
+      WebApp.showAlert(`Ошибка: ${e.message}`);
+    } finally {
+      setIsBuying(false);
     }
   };
+
+  const renderBuyModal = () => {
+    if (!isBuyModalOpen) return null;
+
+    const plans = [
+      { id: 'credits_10', title: '10 кредитов', price: 50, desc: 'На пару тестов' },
+      { id: 'credits_50', title: '50 кредитов', price: 200, desc: 'Оптимальный выбор' },
+      { id: 'credits_100', title: '100 кредитов', price: 350, desc: 'Максимум выгоды' },
+    ];
+
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+      }}>
+        <div style={{
+          backgroundColor: 'var(--color-background)', width: '100%',
+          borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
+          padding: '20px', paddingBottom: '40px',
+          display: 'flex', flexDirection: 'column', gap: '16px',
+          animation: 'slideUp 0.3s ease-out'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '20px', margin: 0 }}>Пополнение кредитов</h2>
+            <button onClick={() => setIsBuyModalOpen(false)} style={{ background: 'none', border: 'none', padding: 0 }}>
+              <X size={24} color="var(--color-muted)" />
+            </button>
+          </div>
+          <p className="text-muted" style={{ fontSize: '14px', margin: 0 }}>
+            Выберите пакет для покупки через Telegram Stars ⭐️
+          </p>
+
+          {plans.map(plan => (
+            <Card key={plan.id} style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>{plan.title}</h4>
+                <p className="text-muted" style={{ margin: 0, fontSize: '12px' }}>{plan.desc}</p>
+              </div>
+              <Button 
+                onClick={() => executePayment(plan.id)} 
+                disabled={isBuying}
+                style={{ borderRadius: '20px', display: 'flex', gap: '6px' }}
+              >
+                {plan.price} ⭐️
+              </Button>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
 
   const renderStreakProgress = () => {
     const currentStreak = profile?.current_streak || 0;
@@ -159,6 +250,8 @@ const Dashboard: FC = () => {
           ⚠️ Ошибка синхронизации: {error}
         </div>
       )}
+
+      {renderBuyModal()}
     </div>
   );
 };
