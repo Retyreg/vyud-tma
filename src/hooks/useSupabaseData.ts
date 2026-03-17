@@ -47,30 +47,44 @@ export const useSupabaseData = () => {
         }
 
         // 1. Получаем профиль через наш backend API
-        const profileResponse = await fetch(`${API_URL}/profile`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': API_KEY,
-            'x-telegram-init-data': WebApp?.initData || ''
-          },
-          body: JSON.stringify({
-            telegram_id,
-            username
-          })
-        });
-
-        if (!profileResponse.ok) {
-          throw new Error('Failed to fetch profile from API');
-        }
-
-        const profileData = await profileResponse.json();
-        if (profileData.success) {
-          setProfile({
-            credits: profileData.credits,
-            current_streak: profileData.current_streak,
-            total_generations: profileData.total_generations
+        try {
+          const profileResponse = await fetch(`${API_URL}/profile`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': API_KEY,
+              'x-telegram-init-data': WebApp?.initData || ''
+            },
+            body: JSON.stringify({
+              telegram_id,
+              username
+            })
           });
+
+          if (!profileResponse.ok) {
+            throw new Error('API profile fetch failed');
+          }
+
+          const profileData = await profileResponse.json();
+          if (profileData.success) {
+            setProfile({
+              credits: profileData.credits,
+              current_streak: profileData.current_streak,
+              total_generations: profileData.total_generations
+            });
+          }
+        } catch (apiError) {
+          console.warn('Backend API not ready or failed, falling back to direct Supabase fetch:', apiError);
+          // Fallback to direct Supabase query
+          const { data: profileData, error: profileError } = await supabase
+            .from('users_credits')
+            .select('credits, current_streak, total_generations')
+            .eq('telegram_id', telegram_id)
+            .single();
+
+          if (!profileError && profileData) {
+            setProfile(profileData);
+          }
         }
 
         // 2. Получаем квизы через Supabase (оставляем пока как есть для истории тестов)
