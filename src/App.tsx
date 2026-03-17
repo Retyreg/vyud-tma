@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import Dashboard from './pages/Dashboard';
 import CreateCourse from './pages/CreateCourse';
 import CourseDetail from './pages/CourseDetail';
@@ -11,6 +12,7 @@ function App() {
         <Route path="/create" element={<CreateCourse />} />
         <Route path="/course/:id" element={<CourseDetail />} />
       </Routes>
+      <Analytics />
     </div>
   );
 }
