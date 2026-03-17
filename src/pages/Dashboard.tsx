@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import WebApp from '@twa-dev/sdk';
-import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X, Users } from 'lucide-react';
+import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X, Users, Copy, Share } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
@@ -27,13 +27,42 @@ const Dashboard: FC = () => {
     setIsBuyModalOpen(true);
   };
 
-  const handleInviteFriend = () => {
+  const getInviteLink = () => {
     const userId = WebApp?.initDataUnsafe?.user?.id || 'demo';
-    const inviteLink = `https://t.me/VyudAiBot?start=inv_${userId}`;
-    const shareText = `Привет! Попробуй VYUD AI — это бот, который за пару секунд превращает любые лекции, видео и PDF в интерактивные курсы с тестами. Зарегистрируйся по моей ссылке и получи бонусные кредиты! 🎁\n\n${inviteLink}`;
+    return `https://t.me/VyudAiBot?start=inv_${userId}`;
+  };
+
+  const handleCopyLink = () => {
+    const link = getInviteLink();
+    navigator.clipboard.writeText(link).then(() => {
+      WebApp.showAlert("Ссылка скопирована в буфер обмена!");
+    }).catch(() => {
+      // Fallback
+      const textArea = document.createElement("textarea");
+      textArea.value = link;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        WebApp.showAlert("Ссылка скопирована в буфер обмена!");
+      } catch (err) {
+        console.error('Copy fallback failed', err);
+      }
+      document.body.removeChild(textArea);
+    });
+  };
+
+  const handleInviteFriend = () => {
+    const inviteLink = getInviteLink();
+    const shareText = `Привет! Попробуй VYUD AI — это бот, который за пару секунд превращает любые лекции, видео и PDF в интерактивные курсы с тестами. Зарегистрируйся и получи бонусные кредиты! 🎁`;
     
-    // Используем нативный метод Telegram для шаринга
-    WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`);
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
+    
+    try {
+      WebApp.openTelegramLink(shareUrl);
+    } catch (e) {
+      window.open(shareUrl, '_blank');
+    }
   };
 
   const executePayment = async (planId: string) => {
@@ -237,8 +266,22 @@ const Dashboard: FC = () => {
             <p className="text-muted" style={{ margin: 0, fontSize: '12px' }}>Дарим +2 кредита тебе и +1 другу</p>
           </div>
         </div>
-        <Button variant="outline" fullWidth onClick={handleInviteFriend} style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
-          Поделиться ссылкой
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--color-background)', padding: '8px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+          <input 
+            type="text" 
+            value={getInviteLink()} 
+            readOnly 
+            style={{ flex: 1, background: 'transparent', border: 'none', fontSize: '12px', color: 'var(--color-text)', outline: 'none' }}
+          />
+          <button onClick={handleCopyLink} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: 'var(--color-primary)' }}>
+            <Copy size={16} />
+          </button>
+        </div>
+
+        <Button fullWidth onClick={handleInviteFriend} style={{ backgroundColor: 'var(--color-primary)', color: 'white', display: 'flex', gap: '8px' }}>
+          <Share size={16} />
+          Переслать в Telegram
         </Button>
       </Card>
 
