@@ -7,7 +7,7 @@ import { ChevronLeft, Send, Sparkles, AlertCircle } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
-const API_KEY = 'vyud_api_key_vNbMtkZxhwmNeeZkALxCzb-Xy6JbJiMnxSY4jk2_aWY';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const CreateCourse: FC = () => {
   const navigate = useNavigate();
@@ -62,7 +62,8 @@ const CreateCourse: FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': API_KEY
+          'x-api-key': API_KEY,
+          'x-telegram-init-data': WebApp?.initData || ''
         },
         body: JSON.stringify({
           telegram_id,

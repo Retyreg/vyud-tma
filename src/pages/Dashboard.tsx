@@ -19,21 +19,55 @@ const Dashboard: FC = () => {
   }, []);
 
   const handleBuyCredits = () => {
-    // Безопасно вызываем метод Telegram для перехода к покупке
     try {
-      // 1. Показываем подтверждение (опционально)
       WebApp.showConfirm("Хотите перейти в меню покупки кредитов?", (ok) => {
         if (ok) {
-          // 2. Закрываем Mini App и отправляем команду /buy боту
-          // Мы используем фичу: закрытие и фокус на боте
           WebApp.close();
-          // Примечание: Telegram не позволяет напрямую "писать" за юзера,
-          // но юзер увидит меню команд бота после закрытия.
         }
       });
     } catch (e) {
       window.location.href = "https://t.me/VyudAiBot";
     }
+  };
+
+  const renderStreakProgress = () => {
+    const currentStreak = profile?.current_streak || 0;
+    const maxStreak = 5;
+    const progress = currentStreak % maxStreak;
+    const daysLeft = maxStreak - progress;
+
+    return (
+      <Card style={{ padding: '16px', background: 'var(--color-surface)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🔥</span>
+            <span style={{ fontWeight: 'bold' }}>Ударный режим: {currentStreak} дней</span>
+          </div>
+          <span className="text-muted" style={{ fontSize: '12px' }}>
+            {progress === 0 && currentStreak > 0 ? 'Бонус получен!' : `Осталось ${daysLeft} ${daysLeft === 1 ? 'день' : daysLeft > 1 && daysLeft < 5 ? 'дня' : 'дней'}`}
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+          {[...Array(maxStreak)].map((_, index) => (
+            <div 
+              key={index}
+              style={{
+                flex: 1,
+                height: '8px',
+                borderRadius: '4px',
+                background: index < progress || (progress === 0 && currentStreak > 0) 
+                  ? 'var(--color-danger)' 
+                  : 'var(--color-border)',
+                transition: 'background-color 0.3s ease'
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ marginTop: '8px', fontSize: '12px', textAlign: 'right', color: 'var(--color-primary)' }}>
+          🎁 +1 бонусный кредит каждые 5 дней!
+        </div>
+      </Card>
+    );
   };
 
   if (loading) {
@@ -60,24 +94,19 @@ const Dashboard: FC = () => {
         </Button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <Zap size={28} color="var(--color-primary)" style={{ marginBottom: '8px' }} />
-          <h3 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>{profile?.credits ?? 0}</h3>
-          <p className="text-muted" style={{ fontSize: '12px', margin: '0' }}>Кредитов</p>
-        </Card>
-
-        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ 
-            background: 'var(--color-danger)', color: 'white', 
-            borderRadius: '50%', width: '28px', height: '28px', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '8px', fontWeight: 'bold', fontSize: '14px'
-          }}>🔥</div>
-          <h3 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>{profile?.current_streak ?? 0}</h3>
-          <p className="text-muted" style={{ fontSize: '12px', margin: '0' }}>Стрик (дней)</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+        <Card style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+             <p className="text-muted" style={{ fontSize: '12px', margin: '0 0 4px 0' }}>Доступно</p>
+             <h3 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <Zap size={24} color="var(--color-primary)" />
+               {profile?.credits ?? 0} <span style={{fontSize: '16px', fontWeight: 'normal'}}>кредитов</span>
+             </h3>
+          </div>
         </Card>
       </div>
+
+      {renderStreakProgress()}
 
       <Card style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)', color: 'white', border: 'none' }}>
         <CardHeader style={{ marginBottom: '12px' }}>

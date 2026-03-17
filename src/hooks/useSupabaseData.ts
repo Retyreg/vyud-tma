@@ -15,7 +15,8 @@ export interface Quiz {
   questions: any;
 }
 
-// ВАШ ID для тестов в браузере (подставьте свой, чтобы видеть свои данные в Chrome)
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 const MOCK_USER_ID = 5701645456; 
 
 export const useSupabaseData = () => {
@@ -29,32 +30,50 @@ export const useSupabaseData = () => {
       try {
         setLoading(true);
         
-        // Пытаемся получить пользователя из Telegram
         let user = WebApp?.initDataUnsafe?.user;
         let telegram_id: number;
         let user_email: string;
+        let username: string | undefined;
 
         if (user) {
           telegram_id = user.id;
+          username = user.username;
           user_email = `${user.username || `user${user.id}`}@telegram.io`;
         } else {
-          // Если мы в браузере (не в Telegram), используем Mock-данные
           console.warn('Telegram user not found, using mock data for development');
           telegram_id = MOCK_USER_ID;
-          user_email = `dmitrijvatutov@telegram.io`; // Замените на вашу почту из Supabase если нужно
+          username = 'dmitrijvatutov';
+          user_email = `dmitrijvatutov@telegram.io`;
         }
 
-        // 1. Получаем профиль
-        const { data: profileData, error: profileError } = await supabase
-          .from('users_credits')
-          .select('credits, current_streak, total_generations')
-          .eq('telegram_id', telegram_id)
-          .single();
+        // 1. Получаем профиль через наш backend API
+        const profileResponse = await fetch(`${API_URL}/profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'x-telegram-init-data': WebApp?.initData || ''
+          },
+          body: JSON.stringify({
+            telegram_id,
+            username
+          })
+        });
 
-        if (profileError && profileData) throw profileError;
-        setProfile(profileData);
+        if (!profileResponse.ok) {
+          throw new Error('Failed to fetch profile from API');
+        }
 
-        // 2. Получаем квизы (ищем и по email, и по id для надежности)
+        const profileData = await profileResponse.json();
+        if (profileData.success) {
+          setProfile({
+            credits: profileData.credits,
+            current_streak: profileData.current_streak,
+            total_generations: profileData.total_generations
+          });
+        }
+
+        // 2. Получаем квизы через Supabase (оставляем пока как есть для истории тестов)
         const { data: quizzesData, error: quizzesError } = await supabase
           .from('quizzes')
           .select('id, title, created_at, questions')
@@ -66,8 +85,7 @@ export const useSupabaseData = () => {
         setQuizzes(quizzesData || []);
 
       } catch (err: any) {
-        console.error('Supabase fetch error:', err);
-        // Не блокируем интерфейс ошибкой, если данных просто нет (новый пользователь)
+        console.error('Fetch error:', err);
         if (err.code !== 'PGRST116') { 
             setError(err.message);
         }
