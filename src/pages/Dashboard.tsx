@@ -96,14 +96,21 @@ const Dashboard: FC = () => {
       const data = await response.json();
       
       if (data.success && data.invoice_link) {
-        WebApp.openInvoice(data.invoice_link, (status) => {
-          if (status === 'paid') {
-            WebApp.showAlert("Оплата успешна! Кредиты будут зачислены через несколько секунд. Обновите страницу.");
-            setIsBuyModalOpen(false);
-          } else if (status === 'failed') {
-            WebApp.showAlert("Ошибка оплаты.");
-          }
-        });
+        // Telegram openInvoice requires the invoice link directly
+        try {
+          WebApp.openInvoice(data.invoice_link, (status) => {
+            if (status === 'paid') {
+              WebApp.showAlert("Оплата успешна! Кредиты будут зачислены через несколько секунд. Обновите страницу.");
+              setIsBuyModalOpen(false);
+            } else if (status === 'failed') {
+              WebApp.showAlert("Оплата не удалась или была отменена.");
+            } else if (status === 'cancelled') {
+              // User closed the modal
+            }
+          });
+        } catch (invoiceError: any) {
+          WebApp.showAlert(`Ошибка вызова оплаты: ${invoiceError.message}`);
+        }
       }
     } catch (e: any) {
       WebApp.showAlert(`Ошибка: ${e.message}`);
