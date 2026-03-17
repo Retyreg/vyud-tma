@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import WebApp from '@twa-dev/sdk';
-import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X } from 'lucide-react';
+import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X, NotebookPen } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
@@ -179,10 +179,16 @@ const Dashboard: FC = () => {
           </h1>
           <p className="text-muted" style={{ fontSize: '14px' }}>Добро пожаловать в VYUD AI.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleBuyCredits} style={{ borderRadius: '20px', padding: '6px 12px' }}>
-          <CreditCard size={14} style={{ marginRight: '6px' }} />
-          Пополнить
-        </Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/journal')} style={{ borderRadius: '20px', padding: '6px 12px' }}>
+            <NotebookPen size={14} style={{ marginRight: '6px' }} />
+            Дневник
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleBuyCredits} style={{ borderRadius: '20px', padding: '6px 12px' }}>
+            <CreditCard size={14} style={{ marginRight: '6px' }} />
+            Пополнить
+          </Button>
+        </div>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
