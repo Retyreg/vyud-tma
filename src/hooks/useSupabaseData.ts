@@ -17,7 +17,6 @@ export interface Quiz {
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
-const MOCK_USER_ID = 5701645456; 
 
 export const useSupabaseData = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
