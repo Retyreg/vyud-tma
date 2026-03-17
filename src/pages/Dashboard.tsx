@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import WebApp from '@twa-dev/sdk';
-import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X } from 'lucide-react';
+import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X, Users } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
@@ -25,6 +25,15 @@ const Dashboard: FC = () => {
 
   const handleBuyCredits = () => {
     setIsBuyModalOpen(true);
+  };
+
+  const handleInviteFriend = () => {
+    const userId = WebApp?.initDataUnsafe?.user?.id || 'demo';
+    const inviteLink = `https://t.me/VyudAiBot?start=inv_${userId}`;
+    const shareText = `Привет! Попробуй VYUD AI — это бот, который за пару секунд превращает любые лекции, видео и PDF в интерактивные курсы с тестами. Зарегистрируйся по моей ссылке и получи бонусные кредиты! 🎁\n\n${inviteLink}`;
+    
+    // Используем нативный метод Telegram для шаринга
+    WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`);
   };
 
   const executePayment = async (planId: string) => {
@@ -216,6 +225,21 @@ const Dashboard: FC = () => {
             Создать сейчас
           </Button>
         </CardContent>
+      </Card>
+
+      <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px dashed var(--color-primary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'rgba(255,75,75,0.1)', padding: '10px', borderRadius: '50%' }}>
+            <Users size={24} color="var(--color-primary)" />
+          </div>
+          <div>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>Пригласи друга!</h3>
+            <p className="text-muted" style={{ margin: 0, fontSize: '12px' }}>Дарим +2 кредита тебе и +1 другу</p>
+          </div>
+        </div>
+        <Button variant="outline" fullWidth onClick={handleInviteFriend} style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+          Поделиться ссылкой
+        </Button>
       </Card>
 
       <div>
