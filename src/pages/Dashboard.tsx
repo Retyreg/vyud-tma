@@ -23,6 +23,25 @@ const Dashboard: FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleBack = () => {
+      setIsBuyModalOpen(false);
+    };
+
+    if (isBuyModalOpen) {
+      WebApp.BackButton.show();
+      WebApp.BackButton.onClick(handleBack);
+    } else {
+      WebApp.BackButton.hide();
+      WebApp.BackButton.offClick(handleBack);
+    }
+
+    return () => {
+      WebApp.BackButton.offClick(handleBack);
+      WebApp.BackButton.hide();
+    };
+  }, [isBuyModalOpen]);
+
   const handleBuyCredits = () => {
     setIsBuyModalOpen(true);
   };
