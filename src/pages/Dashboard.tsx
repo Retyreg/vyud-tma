@@ -186,7 +186,16 @@ const Dashboard: FC = () => {
               <Button 
                 onClick={() => executePayment(plan.id)} 
                 disabled={isBuying}
-                style={{ borderRadius: '20px', display: 'flex', gap: '6px' }}
+                style={{ 
+                  borderRadius: '20px', 
+                  display: 'flex', 
+                  gap: '6px',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  padding: '10px 20px',
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'white'
+                }}
               >
                 {plan.price} ⭐️
               </Button>
