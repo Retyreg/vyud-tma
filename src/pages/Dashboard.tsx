@@ -29,16 +29,16 @@ const Dashboard: FC = () => {
     };
 
     if (isBuyModalOpen) {
-      WebApp.BackButton.show();
-      WebApp.BackButton.onClick(handleBack);
+      WebApp?.BackButton?.show?.();
+      WebApp?.BackButton?.onClick?.(handleBack);
     } else {
-      WebApp.BackButton.hide();
-      WebApp.BackButton.offClick(handleBack);
+      WebApp?.BackButton?.hide?.();
+      WebApp?.BackButton?.offClick?.(handleBack);
     }
 
     return () => {
-      WebApp.BackButton.offClick(handleBack);
-      WebApp.BackButton.hide();
+      WebApp?.BackButton?.offClick?.(handleBack);
+      WebApp?.BackButton?.hide?.();
     };
   }, [isBuyModalOpen]);
 
