@@ -13,10 +13,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const Dashboard: FC = () => {
-  const { profile, quizzes, leaderboard, loading, error } = useSupabaseData();
+  const { profile, quizzes, leaderboard, loading, error, refetch } = useSupabaseData();
   const [firstName, setFirstName] = useState('Студент');
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<{ credits: number; bonus: number } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,7 +88,37 @@ const Dashboard: FC = () => {
     }
   };
 
-  const executePayment = async (planId: string) => {
+  const PLANS = [
+    {
+      id: 'credits_10',
+      title: 'Стартовый',
+      base: 10,
+      bonus: 1,
+      price: 50,
+      badge: null as string | null,
+      highlight: false,
+    },
+    {
+      id: 'credits_50',
+      title: 'Оптимальный',
+      base: 50,
+      bonus: 12,
+      price: 200,
+      badge: null as string | null,
+      highlight: true,
+    },
+    {
+      id: 'credits_100',
+      title: 'Профи',
+      base: 100,
+      bonus: 50,
+      price: 500,
+      badge: '💎',
+      highlight: false,
+    },
+  ];
+
+  const executePayment = async (plan: typeof PLANS[number]) => {
     try {
       setIsBuying(true);
       const user = WebApp?.initDataUnsafe?.user;
@@ -102,41 +133,34 @@ const Dashboard: FC = () => {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': API_KEY,
-          'x-telegram-init-data': WebApp?.initData || ''
+          'x-telegram-init-data': WebApp?.initData || '',
         },
-        body: JSON.stringify({
-          telegram_id,
-          plan_id: planId
-        })
+        body: JSON.stringify({ telegram_id, plan_id: plan.id }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate invoice');
-      }
+      if (!response.ok) throw new Error('Failed to generate invoice');
 
       const data = await response.json();
-      
+
       if (data.success && data.invoice_link) {
+        const invoiceSlug = data.invoice_link.split('/').pop() || data.invoice_link;
         try {
-          // Telegram openInvoice expects just the slug (e.g., $rt4uFUZ10EnPFAAApWZiZdVXbVI) not the full URL
-          const invoiceSlug = data.invoice_link.split('/').pop() || data.invoice_link;
-          
           if (WebApp?.openInvoice) {
             WebApp.openInvoice(invoiceSlug, (status) => {
               if (status === 'paid') {
-                WebApp.showAlert("Оплата успешна! Кредиты будут зачислены через несколько секунд. Обновите страницу.");
                 setIsBuyModalOpen(false);
+                setPaymentSuccess({ credits: plan.base, bonus: plan.bonus });
+                // Обновляем профиль после небольшой задержки (бэкенд зачисляет async)
+                setTimeout(() => refetch(), 2500);
               } else if (status === 'failed') {
-                WebApp.showAlert("Оплата не удалась.");
+                WebApp.showAlert('Оплата не прошла. Попробуйте ещё раз.');
               }
             });
           } else {
-             // Fallback for older Telegram clients
-             WebApp.openTelegramLink(data.invoice_link);
+            WebApp.openTelegramLink(data.invoice_link);
           }
         } catch (invoiceError: any) {
-          WebApp.showAlert(`Ошибка вызова оплаты: ${invoiceError.message}`);
-          // Ultimate fallback
+          WebApp.showAlert(`Ошибка: ${invoiceError.message}`);
           WebApp.openTelegramLink(data.invoice_link);
         }
       }
@@ -150,59 +174,135 @@ const Dashboard: FC = () => {
   const renderBuyModal = () => {
     if (!isBuyModalOpen) return null;
 
-    const plans = [
-      { id: 'credits_10', title: '10 кредитов', price: 50, desc: 'На пару тестов' },
-      { id: 'credits_50', title: '50 кредитов', price: 200, desc: 'Оптимальный выбор' },
-      { id: 'credits_100', title: '100 кредитов', price: 350, desc: 'Максимум выгоды' },
-    ];
-
     return (
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+        backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       }}>
         <div style={{
           backgroundColor: 'var(--tg-theme-bg-color)', width: '100%',
-          borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
-          padding: '20px', paddingBottom: '40px',
-          display: 'flex', flexDirection: 'column', gap: '16px',
-          animation: 'slideUp 0.3s ease-out'
+          borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
+          padding: '20px 16px 40px',
+          display: 'flex', flexDirection: 'column', gap: '12px',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <h2 style={{ fontSize: '20px', margin: 0 }}>Пополнение кредитов</h2>
-            <button onClick={() => setIsBuyModalOpen(false)} style={{ background: 'none', border: 'none', padding: 0 }}>
-              <X size={24} color="var(--color-muted)" />
+            <button onClick={() => setIsBuyModalOpen(false)} style={{ background: 'none', border: 'none', padding: 4, display: 'flex' }}>
+              <X size={22} color="var(--tg-theme-hint-color)" />
             </button>
           </div>
-          <p className="text-muted" style={{ fontSize: '14px', margin: 0 }}>
-            Выберите пакет для покупки через Telegram Stars ⭐️
+          <p className="text-muted" style={{ fontSize: '13px', margin: '0 0 4px' }}>
+            Покупка через Telegram Stars ⭐️ — мгновенное зачисление
           </p>
 
-          {plans.map(plan => (
-            <Card key={plan.id} style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>{plan.title}</h4>
-                <p className="text-muted" style={{ margin: 0, fontSize: '12px' }}>{plan.desc}</p>
-              </div>
-              <Button 
-                onClick={() => executePayment(plan.id)} 
-                disabled={isBuying}
-                style={{ 
-                  borderRadius: '20px', 
-                  display: 'flex', 
-                  gap: '6px',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  padding: '10px 20px',
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'white'
+          {PLANS.map(plan => {
+            const total = plan.base + plan.bonus;
+            const bonusPct = Math.round((plan.bonus / plan.base) * 100);
+            return (
+              <div
+                key={plan.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: plan.highlight
+                    ? '2px solid var(--color-primary)'
+                    : '1px solid var(--color-border)',
+                  background: plan.highlight ? 'rgba(79,70,229,0.06)' : 'var(--tg-theme-secondary-bg-color)',
+                  position: 'relative',
                 }}
               >
-                {plan.price} ⭐️
-              </Button>
-            </Card>
-          ))}
+                {plan.highlight && (
+                  <span style={{
+                    position: 'absolute', top: -10, left: 14,
+                    background: 'var(--color-primary)', color: 'white',
+                    fontSize: '10px', fontWeight: 700, padding: '2px 8px',
+                    borderRadius: '10px',
+                  }}>
+                    ПОПУЛЯРНЫЙ
+                  </span>
+                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '15px' }}>{plan.title}</span>
+                    {plan.badge && <span>{plan.badge}</span>}
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color)' }}>
+                    <span style={{ color: 'var(--tg-theme-text-color)', fontWeight: 600 }}>{total} кредитов</span>
+                    {' '}
+                    <span style={{ color: 'var(--color-success)', fontSize: '11px' }}>
+                      ({plan.base} + {plan.bonus} бонус +{bonusPct}%)
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => executePayment(plan)}
+                  disabled={isBuying}
+                  style={{
+                    borderRadius: '20px',
+                    padding: '8px 16px',
+                    backgroundColor: plan.highlight ? 'var(--color-primary)' : 'var(--tg-theme-secondary-bg-color)',
+                    color: plan.highlight ? 'white' : 'var(--tg-theme-text-color)',
+                    border: plan.highlight ? 'none' : '1px solid var(--color-border)',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    flexShrink: 0,
+                  }}
+                >
+                  {plan.price} ⭐
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPaymentSuccess = () => {
+    if (!paymentSuccess) return null;
+    const total = paymentSuccess.credits + paymentSuccess.bonus;
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+      }}>
+        <div style={{
+          backgroundColor: 'var(--tg-theme-bg-color)',
+          borderRadius: 'var(--radius-lg)', padding: '32px 24px',
+          textAlign: 'center', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: '12px', width: '100%',
+        }}>
+          <div style={{ fontSize: '56px', lineHeight: 1 }}>🎉</div>
+          <h2 style={{ margin: 0, fontSize: '22px' }}>Оплата прошла!</h2>
+          <p style={{ margin: 0, color: 'var(--tg-theme-hint-color)', fontSize: '14px' }}>
+            На ваш счёт зачислено
+          </p>
+          <div style={{
+            background: 'rgba(79,70,229,0.08)',
+            border: '1px solid var(--color-primary)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 24px',
+          }}>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-primary)' }}>
+              +{total}
+            </span>
+            <span style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-primary)' }}> кредитов</span>
+            {paymentSuccess.bonus > 0 && (
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-success)' }}>
+                включая +{paymentSuccess.bonus} бонусных
+              </p>
+            )}
+          </div>
+          <Button
+            onClick={() => setPaymentSuccess(null)}
+            style={{ marginTop: '8px', backgroundColor: 'var(--color-primary)', color: 'white', borderRadius: '20px', padding: '10px 32px' }}
+          >
+            Отлично!
+          </Button>
         </div>
       </div>
     );
@@ -373,6 +473,7 @@ const Dashboard: FC = () => {
       )}
 
       {renderBuyModal()}
+      {renderPaymentSuccess()}
     </div>
   );
 };

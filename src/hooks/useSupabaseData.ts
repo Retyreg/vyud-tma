@@ -30,6 +30,9 @@ export const useSupabaseData = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,7 +129,7 @@ export const useSupabaseData = () => {
     };
 
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
-  return { profile, quizzes, leaderboard, loading, error };
+  return { profile, quizzes, leaderboard, loading, error, refetch };
 };
