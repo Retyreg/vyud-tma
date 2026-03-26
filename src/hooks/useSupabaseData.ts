@@ -8,6 +8,12 @@ export interface UserProfile {
   total_generations: number;
 }
 
+export interface LeaderboardEntry {
+  username: string | null;
+  credits: number;
+  current_streak: number;
+}
+
 export interface Quiz {
   id: string;
   title: string;
@@ -21,6 +27,7 @@ const API_KEY = import.meta.env.VITE_API_KEY || '';
 export const useSupabaseData = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +106,15 @@ export const useSupabaseData = () => {
         if (quizzesError) throw quizzesError;
         setQuizzes(quizzesData || []);
 
+        // 3. Топ-10 лидеров (публичные данные: username + credits + streak)
+        const { data: leaderboardData } = await supabase
+          .from('users_credits')
+          .select('username, credits, current_streak')
+          .order('credits', { ascending: false })
+          .limit(10);
+
+        setLeaderboard(leaderboardData || []);
+
       } catch (err: any) {
         console.error('Fetch error:', err);
         if (err.code !== 'PGRST116') { 
@@ -112,5 +128,5 @@ export const useSupabaseData = () => {
     fetchData();
   }, []);
 
-  return { profile, quizzes, loading, error };
+  return { profile, quizzes, leaderboard, loading, error };
 };

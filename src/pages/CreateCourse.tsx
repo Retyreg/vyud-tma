@@ -119,7 +119,7 @@ const CreateCourse: FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <button onClick={handleBack} style={{ padding: '8px', background: 'var(--color-surface)', borderRadius: '50%', border: '1px solid var(--color-border)', display: 'flex' }}>
+        <button onClick={handleBack} style={{ padding: '8px', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '50%', border: '1px solid var(--color-border)', display: 'flex' }}>
           <ChevronLeft size={20} />
         </button>
         <h1 style={{ fontSize: '20px' }}>Создание курса</h1>
@@ -154,7 +154,7 @@ const CreateCourse: FC = () => {
                 border: '1px solid var(--color-border)',
                 fontFamily: 'inherit',
                 fontSize: '14px',
-                backgroundColor: 'var(--color-background)',
+                backgroundColor: 'var(--tg-theme-bg-color)',
                 color: 'var(--color-text-primary)',
                 resize: 'none'
               }}
@@ -189,7 +189,7 @@ const CreateCourse: FC = () => {
                       fontSize: '12px',
                       fontWeight: 600,
                       border: difficulty === lvl ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-                      background: difficulty === lvl ? 'var(--color-primary-light)' : 'var(--color-surface)',
+                      background: difficulty === lvl ? 'var(--color-primary-light)' : 'var(--tg-theme-secondary-bg-color)',
                       color: difficulty === lvl ? 'var(--color-primary)' : 'var(--color-text-primary)',
                     }}
                   >
@@ -211,7 +211,7 @@ const CreateCourse: FC = () => {
               <select 
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-background)', color: 'var(--color-text-primary)' }}
+                style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--tg-theme-bg-color)', color: 'var(--color-text-primary)' }}
               >
                 <option value="ru">Русский</option>
                 <option value="en">English</option>
@@ -231,7 +231,7 @@ const CreateCourse: FC = () => {
             <CardDescription>Всё готово к запуску генерации.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div style={{ background: 'var(--color-background)', padding: '15px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' }}>
+            <div style={{ background: 'var(--tg-theme-bg-color)', padding: '15px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' }}>
               <p style={{ fontSize: '14px', marginBottom: '8px' }}><b>Материал:</b> {text.substring(0, 50)}...</p>
               <p style={{ fontSize: '14px', marginBottom: '8px' }}><b>Сложность:</b> {difficulty}</p>
               <p style={{ fontSize: '14px' }}><b>Вопросов:</b> {numQuestions}</p>

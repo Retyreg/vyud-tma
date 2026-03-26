@@ -4,7 +4,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const Card: FC<CardProps> = ({ children, className = '', style, ...props }) => {
   const cardStyle = {
-    backgroundColor: 'var(--color-surface)',
+    backgroundColor: 'var(--tg-theme-secondary-bg-color)',
     borderRadius: 'var(--radius-md)',
     padding: '20px',
     boxShadow: 'var(--shadow-card)',

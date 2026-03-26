@@ -86,7 +86,7 @@ const CourseDetail: FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <button onClick={() => navigate('/')} style={{ padding: '8px', background: 'var(--color-surface)', borderRadius: '50%', border: '1px solid var(--color-border)', display: 'flex' }}>
+        <button onClick={() => navigate('/')} style={{ padding: '8px', background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '50%', border: '1px solid var(--color-border)', display: 'flex' }}>
           <ChevronLeft size={20} />
         </button>
         <h1 style={{ fontSize: '20px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quiz.title}</h1>
@@ -106,7 +106,7 @@ const CourseDetail: FC = () => {
               const isSelected = answers[qIndex] === oIndex;
               const isCorrect = q.correct_option_id === oIndex;
               
-              let bgColor = 'var(--color-surface)';
+              let bgColor = 'var(--tg-theme-secondary-bg-color)';
               let borderColor = 'var(--color-border)';
               
               if (isSelected) {
@@ -150,7 +150,7 @@ const CourseDetail: FC = () => {
             })}
 
             {showResults && q.explanation && (
-              <div style={{ marginTop: '10px', padding: '12px', background: 'var(--color-background)', borderRadius: 'var(--radius-sm)', display: 'flex', gap: '8px' }}>
+              <div style={{ marginTop: '10px', padding: '12px', background: 'var(--tg-theme-bg-color)', borderRadius: 'var(--radius-sm)', display: 'flex', gap: '8px' }}>
                 <Info size={16} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <p style={{ fontSize: '13px', fontStyle: 'italic' }}>{q.explanation}</p>
               </div>

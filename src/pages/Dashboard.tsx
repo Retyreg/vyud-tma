@@ -6,12 +6,14 @@ import { Button } from '../components/ui/Button';
 import WebApp from '@twa-dev/sdk';
 import { Zap, BookOpen, PlusCircle, Loader2, CreditCard, X, Users, Copy, Share } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import Badges from '../components/shared/Badges';
+import Leaderboard from '../components/shared/Leaderboard';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const Dashboard: FC = () => {
-  const { profile, quizzes, loading, error } = useSupabaseData();
+  const { profile, quizzes, leaderboard, loading, error } = useSupabaseData();
   const [firstName, setFirstName] = useState('Студент');
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
@@ -161,7 +163,7 @@ const Dashboard: FC = () => {
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
       }}>
         <div style={{
-          backgroundColor: 'var(--color-background)', width: '100%',
+          backgroundColor: 'var(--tg-theme-bg-color)', width: '100%',
           borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
           padding: '20px', paddingBottom: '40px',
           display: 'flex', flexDirection: 'column', gap: '16px',
@@ -214,7 +216,7 @@ const Dashboard: FC = () => {
     const daysLeft = maxStreak - progress;
 
     return (
-      <Card style={{ padding: '16px', background: 'var(--color-surface)' }}>
+      <Card style={{ padding: '16px', background: 'var(--tg-theme-secondary-bg-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '20px' }}>🔥</span>
@@ -285,6 +287,10 @@ const Dashboard: FC = () => {
 
       {renderStreakProgress()}
 
+      {profile && <Badges profile={profile} />}
+
+      <Leaderboard entries={leaderboard} currentUsername={WebApp?.initDataUnsafe?.user?.username} />
+
       <Card style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)', color: 'white', border: 'none' }}>
         <CardHeader style={{ marginBottom: '12px' }}>
           <CardTitle style={{ color: 'white' }}>Новый тест</CardTitle>
@@ -315,7 +321,7 @@ const Dashboard: FC = () => {
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--color-background)', padding: '8px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--tg-theme-secondary-bg-color)', padding: '8px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
           <input 
             type="text" 
             value={getInviteLink()} 
