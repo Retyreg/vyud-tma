@@ -13,7 +13,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const Dashboard: FC = () => {
-  const { profile, quizzes, leaderboard, loading, error, refetch } = useSupabaseData();
+  const { profile, quizzes, leaderboard, loading, error, notInTelegram, refetch } = useSupabaseData();
   const [firstName, setFirstName] = useState('Студент');
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
@@ -349,6 +349,34 @@ const Dashboard: FC = () => {
     );
   };
 
+  if (notInTelegram) {
+    return (
+      <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px', textAlign: 'center', padding: '24px' }}>
+        <span style={{ fontSize: '56px' }}>✈️</span>
+        <h2 style={{ margin: 0, fontSize: '20px' }}>Откройте в Telegram</h2>
+        <p className="text-muted" style={{ margin: 0, fontSize: '14px', maxWidth: '260px' }}>
+          Это приложение работает только внутри Telegram. Найдите бота <strong>@VyudAiBot</strong> и запустите его.
+        </p>
+        <a
+          href="https://t.me/VyudAiBot"
+          style={{
+            display: 'inline-block',
+            marginTop: '8px',
+            padding: '12px 24px',
+            backgroundColor: 'var(--color-primary)',
+            color: 'white',
+            borderRadius: 'var(--radius-md)',
+            fontWeight: 700,
+            fontSize: '15px',
+            textDecoration: 'none',
+          }}
+        >
+          Открыть бота
+        </a>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px' }}>
@@ -468,7 +496,7 @@ const Dashboard: FC = () => {
 
       {error && (
         <div style={{ color: 'var(--color-danger)', fontSize: '12px', textAlign: 'center', marginTop: '20px' }}>
-          ⚠️ Ошибка синхронизации: {error}
+          ⚠️ Не удалось загрузить данные. Попробуйте перезапустить приложение.
         </div>
       )}
 

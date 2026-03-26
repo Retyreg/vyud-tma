@@ -30,6 +30,7 @@ export const useSupabaseData = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notInTelegram, setNotInTelegram] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refetch = () => setRefreshKey((k) => k + 1);
@@ -38,7 +39,7 @@ export const useSupabaseData = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         let user = WebApp?.initDataUnsafe?.user;
         let telegram_id: number;
         let user_email: string;
@@ -54,7 +55,8 @@ export const useSupabaseData = () => {
           username = 'dmitrijvatutov';
           user_email = `dmitrijvatutov@telegram.io`;
         } else {
-          throw new Error('Пожалуйста, откройте приложение внутри Telegram');
+          setNotInTelegram(true);
+          return;
         }
 
         // 1. Получаем профиль через наш backend API
@@ -131,5 +133,5 @@ export const useSupabaseData = () => {
     fetchData();
   }, [refreshKey]);
 
-  return { profile, quizzes, leaderboard, loading, error, refetch };
+  return { profile, quizzes, leaderboard, loading, error, notInTelegram, refetch };
 };
