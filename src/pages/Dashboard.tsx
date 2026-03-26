@@ -13,7 +13,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const Dashboard: FC = () => {
-  const { profile, quizzes, leaderboard, loading, error, notInTelegram, refetch } = useSupabaseData();
+  const { profile, quizzes, leaderboard, loading, error, notInTelegram } = useSupabaseData();
   const [firstName, setFirstName] = useState('Студент');
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
@@ -150,8 +150,7 @@ const Dashboard: FC = () => {
               if (status === 'paid') {
                 setIsBuyModalOpen(false);
                 setPaymentSuccess({ credits: plan.base, bonus: plan.bonus });
-                // Обновляем профиль после небольшой задержки (бэкенд зачисляет async)
-                setTimeout(() => refetch(), 2500);
+                // Баланс обновится автоматически через Supabase Realtime
               } else if (status === 'failed') {
                 WebApp.showAlert('Оплата не прошла. Попробуйте ещё раз.');
               }

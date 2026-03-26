@@ -32,6 +32,7 @@ export const useSupabaseData = () => {
   const [error, setError] = useState<string | null>(null);
   const [notInTelegram, setNotInTelegram] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const telegramIdRef = { current: 0 };
 
   const refetch = () => setRefreshKey((k) => k + 1);
 
@@ -49,11 +50,13 @@ export const useSupabaseData = () => {
           telegram_id = user.id;
           username = user.username;
           user_email = `${user.username || `user${user.id}`}@telegram.io`;
+          telegramIdRef.current = telegram_id;
         } else if (import.meta.env.DEV) {
           console.warn('Telegram user not found, using mock data for local development');
           telegram_id = 5701645456;
           username = 'dmitrijvatutov';
           user_email = `dmitrijvatutov@telegram.io`;
+          telegramIdRef.current = telegram_id;
         } else {
           setNotInTelegram(true);
           return;
@@ -132,6 +135,41 @@ export const useSupabaseData = () => {
 
     fetchData();
   }, [refreshKey]);
+
+  // Supabase Realtime: мгновенное обновление баланса после оплаты через бота
+  useEffect(() => {
+    const channel = supabase
+      .channel('credits-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users_credits',
+          filter: telegramIdRef.current
+            ? `telegram_id=eq.${telegramIdRef.current}`
+            : undefined,
+        },
+        (payload) => {
+          const updated = payload.new as { credits?: number; current_streak?: number; total_generations?: number };
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  credits: updated.credits ?? prev.credits,
+                  current_streak: updated.current_streak ?? prev.current_streak,
+                  total_generations: updated.total_generations ?? prev.total_generations,
+                }
+              : prev
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return { profile, quizzes, leaderboard, loading, error, notInTelegram, refetch };
 };
