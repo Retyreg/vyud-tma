@@ -1,23 +1,30 @@
 import { Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import CreateCourse from './pages/CreateCourse';
-import CourseDetail from './pages/CourseDetail';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+import AuthPage from './pages/AuthPage';
+import UploadPage from './pages/UploadPage';
 import TestsPage from './pages/TestsPage';
+import TestPlayerPage from './pages/TestPlayerPage';
 import ProfilePage from './pages/ProfilePage';
-import BottomNav from './components/shared/BottomNav';
+import HelpPage from './pages/HelpPage';
 
 function App() {
   return (
-    <div style={{ padding: '16px 16px 76px', width: '100%', boxSizing: 'border-box' }}>
+    <AuthProvider>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/create" element={<CreateCourse />} />
-        <Route path="/course/:id" element={<CourseDetail />} />
-        <Route path="/tests" element={<TestsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<UploadPage />} />
+            <Route path="/tests" element={<TestsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/help" element={<HelpPage />} />
+          </Route>
+          <Route path="/test/:id" element={<TestPlayerPage />} />
+        </Route>
       </Routes>
-      <BottomNav />
-    </div>
+    </AuthProvider>
   );
 }
 

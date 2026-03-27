@@ -1,81 +1,125 @@
-import { useEffect, useState } from 'react';
 import type { FC } from 'react';
-import { Card } from '../components/ui/Card';
-import { Loader2, Zap, Flame, BookOpen, Star } from 'lucide-react';
-import { useSupabaseData } from '../hooks/useSupabaseData';
-import WebApp from '@twa-dev/sdk';
+import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../contexts/AuthContext';
+import { Zap, BookOpen, Star, LogOut, CreditCard, Calendar } from 'lucide-react';
+import { isTMA } from '../lib/telegram';
 
 const ProfilePage: FC = () => {
-  const { profile, loading } = useSupabaseData();
-  const [userName, setUserName] = useState('');
+  const { user, signOut } = useAuthContext();
+  const navigate = useNavigate();
+  const telegramMode = isTMA();
 
-  useEffect(() => {
-    const user = WebApp?.initDataUnsafe?.user;
-    if (user) {
-      setUserName(user.first_name + (user.last_name ? ' ' + user.last_name : ''));
-    }
-  }, []);
+  if (!user) return null;
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px' }}>
-        <Loader2 className="animate-spin" size={32} color="var(--color-primary)" />
-        <p className="text-muted">Загрузка профиля...</p>
-      </div>
-    );
-  }
+  const initials = (user.first_name || user.email || '?')[0].toUpperCase();
+  const displayName = user.first_name || user.username || user.email.split('@')[0];
+  const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' }) : '—';
 
-  const stats = [
-    { icon: <Zap size={20} color="var(--color-primary)" />, label: 'Кредитов', value: profile?.credits ?? 0 },
-    { icon: <Flame size={20} color="var(--color-danger)" />, label: 'Дней подряд', value: profile?.current_streak ?? 0 },
-    { icon: <BookOpen size={20} color="#22c55e" />, label: 'Тестов создано', value: profile?.total_generations ?? 0 },
-  ];
-
-  const user = WebApp?.initDataUnsafe?.user;
-  const username = user?.username ? `@${user.username}` : '';
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <h1 style={{ fontSize: '22px', margin: 0 }}>Профиль</h1>
 
-      <Card style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {/* User card */}
+      <div style={{
+        padding: '20px', borderRadius: '16px',
+        background: 'linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%)',
+        color: 'white', display: 'flex', alignItems: 'center', gap: '16px',
+      }}>
         <div style={{
-          width: '64px', height: '64px', borderRadius: '50%',
-          background: 'var(--color-primary)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          fontSize: '28px', flexShrink: 0,
+          width: '60px', height: '60px', borderRadius: '50%',
+          background: 'rgba(255,255,255,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '26px', fontWeight: 700, flexShrink: 0,
         }}>
-          {userName?.[0] || '?'}
+          {initials}
         </div>
-        <div>
-          <h2 style={{ margin: '0 0 4px', fontSize: '18px' }}>{userName || 'Пользователь'}</h2>
-          {username && <p className="text-muted" style={{ margin: 0, fontSize: '13px' }}>{username}</p>}
-          {user?.is_premium && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#f59e0b', fontWeight: 700, marginTop: '4px' }}>
-              <Star size={12} /> Telegram Premium
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: '18px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {displayName}
+          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {user.username && (
+              <span style={{ fontSize: '13px', opacity: 0.85 }}>@{user.username}</span>
+            )}
+            {!telegramMode && (
+              <span style={{ fontSize: '12px', opacity: 0.7 }}>{user.email}</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', padding: '2px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.2)', fontWeight: 600 }}>
+              {user.tariff.toUpperCase()}
             </span>
-          )}
+            {user.is_premium && (
+              <span style={{ fontSize: '11px', padding: '2px 10px', borderRadius: '20px', background: 'rgba(251,191,36,0.35)', color: '#fbbf24', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Star size={10} fill="#fbbf24" /> Premium
+              </span>
+            )}
+          </div>
         </div>
-      </Card>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-        {stats.map((s) => (
-          <Card key={s.label} style={{ padding: '14px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+      {/* Credits big */}
+      <div style={{
+        padding: '20px', borderRadius: '16px', textAlign: 'center',
+        background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+        border: '1px solid var(--border)',
+      }}>
+        <Zap size={28} color="var(--primary)" />
+        <div style={{ fontSize: '52px', fontWeight: 900, color: 'var(--primary)', lineHeight: 1.1, margin: '4px 0' }}>
+          {user.credits}
+        </div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>кредитов доступно</div>
+        <button
+          onClick={() => {/* TODO: payment */}}
+          style={{
+            marginTop: '14px', padding: '10px 24px', borderRadius: '20px',
+            background: 'var(--primary)', color: 'white', border: 'none',
+            cursor: 'pointer', fontWeight: 700, fontSize: '14px',
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+          }}
+        >
+          <CreditCard size={14} /> Пополнить
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {[
+          { icon: <BookOpen size={18} color="var(--primary)" />, label: 'Тестов создано', value: user.total_generations },
+          { icon: <Calendar size={18} color="#8b5cf6" />, label: 'Зарегистрирован', value: joinDate },
+        ].map((s) => (
+          <div key={s.label} style={{
+            padding: '16px', borderRadius: '12px',
+            background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+            border: '1px solid var(--border)',
+            display: 'flex', flexDirection: 'column', gap: '6px',
+          }}>
             {s.icon}
-            <span style={{ fontSize: '22px', fontWeight: 800 }}>{s.value}</span>
-            <span className="text-muted" style={{ fontSize: '10px' }}>{s.label}</span>
-          </Card>
+            <div style={{ fontSize: '20px', fontWeight: 800 }}>{s.value}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{s.label}</div>
+          </div>
         ))}
       </div>
 
-      <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--tg-theme-secondary-bg-color)' }}>
-        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>Как получить кредиты?</p>
-        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: 'var(--tg-theme-hint-color)', lineHeight: 1.8 }}>
-          <li>Купить пакет через Telegram Stars ⭐</li>
-          <li>Пригласить друга (+2 тебе, +1 другу)</li>
-          <li>Ударный режим: +1 бонус каждые 5 дней</li>
-        </ul>
-      </Card>
+      {/* Sign out — browser only */}
+      {!telegramMode && (
+        <button
+          onClick={handleSignOut}
+          style={{
+            padding: '13px', borderRadius: '12px', fontWeight: 700, fontSize: '14px',
+            background: 'rgba(239,68,68,0.06)', color: 'var(--error)',
+            border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          }}
+        >
+          <LogOut size={16} /> Выйти из аккаунта
+        </button>
+      )}
     </div>
   );
 };
