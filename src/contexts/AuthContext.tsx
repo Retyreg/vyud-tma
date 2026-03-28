@@ -136,6 +136,7 @@ async function fetchUserByEmail(email: string): Promise<AuthUser | null> {
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  // Evaluate at render time, not module load time
   const telegramMode = isTMA();
 
   const loadUser = async () => {
@@ -143,6 +144,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     try {
       if (telegramMode) {
         initTelegram();
+        // Telegram WebApp may need a tick to expose user data after ready()
+        await new Promise((r) => setTimeout(r, 100));
         const tgUser = getTelegramUser();
         if (tgUser) {
           const email = getTelegramEmail();
