@@ -57,8 +57,13 @@ const UploadPage: FC = () => {
       formData.append('num_questions', count.toString());
       formData.append('difficulty', difficulty);
       formData.append('language', 'Russian');
-      formData.append('telegram_id', user.telegram_id?.toString() ?? '0');
-      formData.append('username', user.username ?? '');
+      formData.append('email', user.email);
+      if (user.telegram_id) {
+        formData.append('telegram_id', user.telegram_id.toString());
+      }
+      if (user.username) {
+        formData.append('username', user.username);
+      }
 
       await simulate('processing', 400);
       setStep('generating');
