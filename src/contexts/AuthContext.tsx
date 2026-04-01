@@ -146,7 +146,18 @@ async function fetchUserByEmail(email: string): Promise<AuthUser | null> {
       .select()
       .single();
 
-    if (insertErr) throw insertErr;
+    if (insertErr) {
+      // RLS или другая ошибка insert — вернуть базовый профиль
+      console.warn('Could not create users_credits record:', insertErr.message);
+      return {
+        email,
+        credits: 0,
+        tariff: 'free',
+        is_premium: false,
+        auth_type: 'email' as const,
+        total_generations: 0,
+      };
+    }
 
     return {
       email,
