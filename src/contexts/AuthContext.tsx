@@ -114,18 +114,48 @@ async function fetchUserByEmail(email: string): Promise<AuthUser | null> {
       .eq('email', email)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) throw error;
+
+    // Запись есть — вернуть
+    if (data) {
+      return {
+        email: data.email,
+        username: data.username,
+        first_name: data.first_name,
+        credits: data.credits ?? 0,
+        tariff: data.tariff || 'free',
+        is_premium: data.telegram_premium ?? false,
+        auth_type: 'email',
+        total_generations: data.total_generations ?? 0,
+        created_at: data.created_at,
+      };
+    }
+
+    // Записи нет — создать автоматически
+    const { data: inserted, error: insertErr } = await supabase
+      .from('users_credits')
+      .insert({
+        email,
+        credits: WELCOME_CREDITS,
+        tariff: 'free',
+        telegram_premium: false,
+        total_generations: 0,
+        created_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (insertErr) throw insertErr;
 
     return {
-      email: data.email,
-      username: data.username,
-      first_name: data.first_name,
-      credits: data.credits ?? 0,
-      tariff: data.tariff || 'free',
-      is_premium: data.telegram_premium ?? false,
+      email,
+      credits: inserted?.credits ?? WELCOME_CREDITS,
+      tariff: 'free',
+      is_premium: false,
       auth_type: 'email',
-      total_generations: data.total_generations ?? 0,
-      created_at: data.created_at,
+      total_generations: 0,
+      created_at: inserted?.created_at,
     };
   } catch (e) {
     console.error('fetchUserByEmail error:', e);

@@ -31,7 +31,7 @@ const AuthPage: FC = () => {
       } else {
         const { error: authError } = await supabase.auth.signUp({ email, password });
         if (authError) throw authError;
-        setSuccess('Аккаунт создан! Проверьте почту для подтверждения.');
+        setSuccess('Аккаунт создан! Теперь войдите с вашим email и паролем.');
       }
     } catch (e: any) {
       const msg = e.message || 'Ошибка авторизации';
