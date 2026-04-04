@@ -6,7 +6,6 @@ const TABS = [
   { path: '/graph', label: 'Граф', icon: '🧠', exact: false },
   { path: '/tests', label: 'Тесты', icon: '📚', exact: false },
   { path: '/profile', label: 'Профиль', icon: '👤', exact: false },
-  { path: '/help', label: 'Помощь', icon: '❓', exact: false },
 ];
 
 const BottomNav: FC = () => {

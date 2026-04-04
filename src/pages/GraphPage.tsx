@@ -1,218 +1,382 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FC } from 'react';
-import FileUploader from '../components/FileUploader';
-import { AlertCircle } from 'lucide-react';
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  type Node,
+  type Edge,
+  type NodeProps,
+  Handle,
+  Position,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { useAuthContext } from '../contexts/AuthContext';
+import {
+  getUserOrgs,
+  joinOrg,
+  getOrgGraph,
+  streamNodeExplanation,
+  type LmsOrg,
+  type LmsNode,
+} from '../api/lms';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.vyud.online/api';
+// ─── helpers ────────────────────────────────────────────────────────────────
 
-type Step = 'idle' | 'uploading' | 'processing' | 'generating' | 'done';
+function userKey(user: { telegram_id?: number; email: string }): string {
+  return user.telegram_id ? String(user.telegram_id) : user.email;
+}
 
-const STEPS: Step[] = ['uploading', 'processing', 'generating', 'done'];
-const STEP_LABELS: Record<Step, string> = {
-  idle: '',
-  uploading: 'Загрузка файла...',
-  processing: 'Обработка содержимого...',
-  generating: 'Построение графа AI...',
-  done: 'Готово!',
+function buildFlowNodes(nodes: LmsNode[]): Node[] {
+  const byLevel: Record<number, LmsNode[]> = {};
+  for (const n of nodes) {
+    (byLevel[n.level] ??= []).push(n);
+  }
+  const result: Node[] = [];
+  const COL_W = 180;
+  const ROW_H = 120;
+
+  for (const [lvl, group] of Object.entries(byLevel)) {
+    const level = Number(lvl);
+    group.forEach((n, i) => {
+      const total = group.length;
+      result.push({
+        id: String(n.id),
+        type: 'lmsNode',
+        position: {
+          x: (i - (total - 1) / 2) * COL_W,
+          y: (level - 1) * ROW_H,
+        },
+        data: { node: n },
+      });
+    });
+  }
+  return result;
+}
+
+function buildFlowEdges(edges: { source: number; target: number }[]): Edge[] {
+  return edges.map((e) => ({
+    id: `${e.source}-${e.target}`,
+    source: String(e.source),
+    target: String(e.target),
+    style: { stroke: 'var(--border)', strokeWidth: 1.5 },
+  }));
+}
+
+// ─── Custom node ─────────────────────────────────────────────────────────────
+
+const LmsNodeComponent: FC<NodeProps> = ({ data, selected }) => {
+  const { node } = data as { node: LmsNode };
+  const bg = node.is_completed
+    ? '#4ade80'
+    : node.is_available
+    ? 'var(--primary)'
+    : 'var(--border)';
+  const textColor = node.is_completed || node.is_available ? '#fff' : 'var(--text-secondary)';
+
+  return (
+    <>
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <div
+        style={{
+          padding: '10px 14px',
+          borderRadius: '12px',
+          background: bg,
+          color: textColor,
+          fontSize: '12px',
+          fontWeight: 600,
+          maxWidth: '160px',
+          textAlign: 'center',
+          boxShadow: selected ? '0 0 0 3px rgba(99,102,241,0.5)' : '0 2px 6px rgba(0,0,0,0.12)',
+          opacity: node.is_available ? 1 : 0.55,
+          cursor: node.is_available ? 'pointer' : 'default',
+          transition: 'box-shadow 0.15s',
+          lineHeight: 1.3,
+        }}
+      >
+        {node.is_completed && <div style={{ fontSize: '14px', marginBottom: 4 }}>✅</div>}
+        {node.label}
+      </div>
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+    </>
+  );
 };
 
-const GraphPage: FC = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [topic, setTopic] = useState('');
-  const [step, setStep] = useState<Step>('idle');
+const NODE_TYPES = { lmsNode: LmsNodeComponent };
+
+// ─── Explanation drawer ───────────────────────────────────────────────────────
+
+interface DrawerProps {
+  node: LmsNode;
+  onClose: () => void;
+}
+
+const NodeDrawer: FC<DrawerProps> = ({ node, onClose }) => {
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [cached, setCached] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    setText('');
+    setLoading(true);
+    setCached(false);
+
+    cleanupRef.current = streamNodeExplanation(
+      node.id,
+      (chunk, isCached) => {
+        setText((prev) => prev + chunk);
+        if (isCached) setCached(true);
+        setLoading(false);
+      },
+      () => setLoading(false),
+      () => setLoading(false),
+    );
+
+    return () => cleanupRef.current?.();
+  }, [node.id]);
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+      }}
+    >
+      <div
+        onClick={onClose}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }}
+      />
+      <div
+        style={{
+          position: 'relative',
+          background: 'var(--tg-theme-bg-color, #fff)',
+          borderRadius: '20px 20px 0 0',
+          padding: '20px 20px 40px',
+          maxHeight: '65vh',
+          overflowY: 'auto',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.15)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16, lineHeight: 1.3, flex: 1, paddingRight: 12 }}>
+            {node.label}
+          </h3>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: 0, color: 'var(--text-secondary)' }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {cached && (
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>
+            из кэша
+          </span>
+        )}
+
+        {loading && !text && (
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Генерирую объяснение…</p>
+        )}
+
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+          {text}
+          {loading && text && <span style={{ opacity: 0.4 }}>▌</span>}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ─── Join org screen ──────────────────────────────────────────────────────────
+
+interface JoinScreenProps {
+  onJoined: (org: LmsOrg) => void;
+  userKey: string;
+}
+
+const JoinScreen: FC<JoinScreenProps> = ({ onJoined, userKey: key }) => {
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nodeCount, setNodeCount] = useState<number | null>(null);
 
-  const orgId = typeof localStorage !== 'undefined' ? localStorage.getItem('org_id') : null;
-  const isGenerating = step !== 'idle' && step !== 'done';
-  const isDone = step === 'done';
-
-  const simulate = async (s: Step, ms: number) => {
-    setStep(s);
-    await new Promise<void>((r) => setTimeout(r, ms));
-  };
-
-  const handleCreate = async () => {
-    if (!file || !orgId) return;
+  const handleJoin = async () => {
+    if (!code.trim()) return;
+    setLoading(true);
     setError(null);
-
     try {
-      await simulate('uploading', 600);
-
-      const formData = new FormData();
-      formData.append('file', file);
-      if (topic.trim()) {
-        formData.append('topic', topic.trim());
-      }
-
-      await simulate('processing', 400);
-      setStep('generating');
-
-      const response = await fetch(`${API_URL}/orgs/${orgId}/courses/upload-pdf`, {
-        method: 'POST',
-        headers: {
-          'x-telegram-init-data': typeof window !== 'undefined' ? ((window as Window & { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp?.initData ?? '') : '',
-        },
-        body: formData,
-      });
-
-      const data: { node_count?: number; detail?: string } = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Ошибка создания графа');
-      }
-
-      setNodeCount(data.node_count ?? null);
-      setStep('done');
-    } catch (e: unknown) {
-      setStep('idle');
-      setError(e instanceof Error ? e.message : 'Произошла ошибка. Попробуйте ещё раз.');
+      const result = await joinOrg(code.trim(), key);
+      const orgs = await getUserOrgs(key);
+      const joined = orgs.find((o) => o.org_id === result.org_id);
+      if (joined) onJoined(joined);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (isGenerating) {
-    const currentIdx = STEPS.indexOf(step);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: 20, padding: '0 24px', textAlign: 'center' }}>
+      <div style={{ fontSize: 48 }}>🧠</div>
+      <h2 style={{ margin: 0, fontSize: 20 }}>Присоединитесь к команде</h2>
+      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
+        Введите код приглашения от вашего менеджера
+      </p>
+
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="Код приглашения"
+        style={{
+          width: '100%', padding: '12px 14px', borderRadius: 12,
+          border: '1.5px solid var(--border)', fontSize: 15,
+          background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)',
+          outline: 'none', boxSizing: 'border-box',
+        }}
+        onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+      />
+
+      {error && <p style={{ margin: 0, color: 'var(--error)', fontSize: 13 }}>{error}</p>}
+
+      <button
+        onClick={handleJoin}
+        disabled={!code.trim() || loading}
+        style={{
+          width: '100%', padding: '13px', borderRadius: 12, fontWeight: 700, fontSize: 15,
+          background: code.trim() && !loading ? 'var(--primary)' : 'var(--border)',
+          color: code.trim() && !loading ? '#fff' : 'var(--text-secondary)',
+          border: 'none', cursor: code.trim() && !loading ? 'pointer' : 'default',
+        }}
+      >
+        {loading ? 'Подключение…' : 'Войти в команду'}
+      </button>
+    </div>
+  );
+};
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
+const GraphPage: FC = () => {
+  const { user } = useAuthContext();
+  const [org, setOrg] = useState<LmsOrg | null>(null);
+  const [graph, setGraph] = useState<{ nodes: LmsNode[]; edges: { source: number; target: number }[] } | null>(null);
+  const [selectedNode, setSelectedNode] = useState<LmsNode | null>(null);
+  const [status, setStatus] = useState<'loading' | 'no-org' | 'ready' | 'empty' | 'error'>('loading');
+  const [error, setError] = useState<string | null>(null);
+
+  const key = user ? userKey(user) : '';
+
+  const loadGraph = useCallback(async (o: LmsOrg) => {
+    try {
+      const g = await getOrgGraph(o.org_id);
+      setGraph(g);
+      setStatus(g.nodes.length === 0 ? 'empty' : 'ready');
+    } catch (e: any) {
+      setError(e.message);
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!key) return;
+    getUserOrgs(key)
+      .then((orgs) => {
+        if (orgs.length === 0) {
+          setStatus('no-org');
+        } else {
+          const first = orgs[0];
+          setOrg(first);
+          loadGraph(first);
+        }
+      })
+      .catch((e) => {
+        setError(e.message);
+        setStatus('error');
+      });
+  }, [key, loadGraph]);
+
+  const flowNodes = useMemo(() => (graph ? buildFlowNodes(graph.nodes) : []), [graph]);
+  const flowEdges = useMemo(() => (graph ? buildFlowEdges(graph.edges) : []), [graph]);
+
+  const handleNodeClick = useCallback(
+    (_: any, node: Node) => {
+      const lmsNode = graph?.nodes.find((n) => String(n.id) === node.id);
+      if (lmsNode?.is_available) setSelectedNode(lmsNode);
+    },
+    [graph],
+  );
+
+  if (status === 'loading') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: '24px', textAlign: 'center' }}>
-        <div style={{ position: 'relative', width: '72px', height: '72px' }}>
-          <div style={{ width: '72px', height: '72px', border: '4px solid var(--primary-light)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
-          <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '24px' }}>🧠</span>
-        </div>
-
-        <div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '20px' }}>{STEP_LABELS[step]}</h2>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Не закрывайте приложение, это займёт до 30 секунд
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-          {STEPS.map((s, i) => (
-            <div
-              key={s}
-              style={{
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: i <= currentIdx ? 'var(--primary)' : 'var(--border)',
-                transition: 'background 0.3s',
-              }}
-            />
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: '260px' }}>
-          {STEPS.map((s, i) => (
-            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: i <= currentIdx ? 1 : 0.3 }}>
-              <span style={{ fontSize: '14px' }}>{i < currentIdx ? '✅' : i === currentIdx ? '⏳' : '○'}</span>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{STEP_LABELS[s]}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' }}>
+        <p style={{ color: 'var(--text-secondary)' }}>Загрузка…</p>
       </div>
     );
   }
 
-  if (isDone) {
+  if (status === 'no-org') {
+    return <JoinScreen userKey={key} onJoined={(o) => { setOrg(o); setStatus('loading'); loadGraph(o); }} />;
+  }
+
+  if (status === 'error') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: '20px', textAlign: 'center' }}>
-        <span style={{ fontSize: '56px' }}>🧠</span>
-        <div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '22px' }}>
-            ✅ Граф создан!{nodeCount !== null ? ` ${nodeCount} узлов` : ''}
-          </h2>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Граф знаний успешно построен по вашему PDF
-          </p>
-        </div>
-        <a
-          href="https://vyud-lms.vercel.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-block', padding: '14px 28px', borderRadius: '12px',
-            background: 'var(--primary)', color: 'white',
-            fontWeight: 700, fontSize: '16px', textDecoration: 'none',
-          }}
-        >
-          Открыть граф
-        </a>
-        <button
-          onClick={() => { setStep('idle'); setFile(null); setTopic(''); setNodeCount(null); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '14px', color: 'var(--text-secondary)',
-          }}
-        >
-          Создать ещё один
-        </button>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: 12 }}>
+        <p style={{ color: 'var(--error)' }}>{error}</p>
+      </div>
+    );
+  }
+
+  if (status === 'empty') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: 12, textAlign: 'center', padding: '0 24px' }}>
+        <div style={{ fontSize: 48 }}>📚</div>
+        <h3 style={{ margin: 0 }}>Курс ещё не создан</h3>
+        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
+          Менеджер {org?.org_name} добавит материалы
+        </p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div>
-        <h1 style={{ fontSize: '22px', margin: '0 0 4px' }}>Создать граф знаний</h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
-          Загрузите PDF — AI построит граф концептов для обучения
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div style={{ padding: '12px 16px 8px', flexShrink: 0 }}>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>{org?.org_name}</p>
+        <h2 style={{ margin: '2px 0 0', fontSize: 18 }}>Граф знаний</h2>
       </div>
 
-      {!orgId && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '14px', borderRadius: '12px',
-          background: 'rgba(239,68,68,0.06)', border: '1px solid var(--error)',
-        }}>
-          <AlertCircle size={20} color="var(--error)" style={{ flexShrink: 0 }} />
-          <div>
-            <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px', color: 'var(--error)' }}>Нет организации</p>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Сначала вступите в организацию</p>
-          </div>
-        </div>
-      )}
-
-      <FileUploader file={file} onFileSelect={setFile} onClear={() => setFile(null)} disabled={isGenerating} />
-
-      <div>
-        <label style={{ display: 'block', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }}>
-          Тема курса <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>(опционально)</span>
-        </label>
-        <input
-          type="text"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="Тема курса (опционально)"
-          disabled={isGenerating}
-          style={{
-            width: '100%', padding: '12px 14px', borderRadius: '10px', fontSize: '14px',
-            border: '1px solid var(--border)',
-            background: 'var(--tg-theme-secondary-bg-color, var(--bg))',
-            color: 'var(--text)',
-            outline: 'none', boxSizing: 'border-box',
-          }}
-        />
+      <div style={{ display: 'flex', gap: 12, padding: '0 16px 10px', fontSize: 11, color: 'var(--text-secondary)', flexShrink: 0 }}>
+        <span>✅ пройдено</span>
+        <span style={{ color: 'var(--primary)' }}>● доступно</span>
+        <span>● заблокировано</span>
       </div>
 
-      {error && (
-        <div style={{ display: 'flex', gap: '8px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.06)', border: '1px solid var(--error)' }}>
-          <AlertCircle size={16} color="var(--error)" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--error)' }}>{error}</p>
-        </div>
-      )}
+      <div style={{ flex: 1, minHeight: 0, paddingBottom: '60px' }}>
+        <ReactFlow
+          nodes={flowNodes}
+          edges={flowEdges}
+          nodeTypes={NODE_TYPES}
+          onNodeClick={handleNodeClick}
+          fitView
+          fitViewOptions={{ padding: 0.3 }}
+          minZoom={0.4}
+          maxZoom={1.5}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={24} color="var(--border)" />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </div>
 
-      <button
-        onClick={handleCreate}
-        disabled={!file || !orgId || isGenerating}
-        style={{
-          width: '100%', padding: '14px', borderRadius: '12px', fontWeight: 700, fontSize: '16px',
-          background: file && orgId ? 'var(--primary)' : 'var(--border)',
-          color: file && orgId ? 'white' : 'var(--text-secondary)',
-          border: 'none', cursor: file && orgId ? 'pointer' : 'default',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-        }}
-      >
-        ⚡ Создать граф
-      </button>
+      {selectedNode && (
+        <NodeDrawer node={selectedNode} onClose={() => setSelectedNode(null)} />
+      )}
     </div>
   );
 };

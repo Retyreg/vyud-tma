@@ -4,7 +4,7 @@ import { useAuthContext } from '../contexts/AuthContext';
 import BottomNav from './BottomNav';
 import { Zap } from 'lucide-react';
 
-const HIDE_HEADER_PATHS = ['/test/'];
+const HIDE_HEADER_PATHS = ['/test/', '/graph'];
 const HIDE_NAV_PATHS = ['/test/', '/auth'];
 
 const Layout: FC = () => {
@@ -52,7 +52,7 @@ const Layout: FC = () => {
         </header>
       )}
 
-      <main style={{ flex: 1, padding: hideNav ? '0' : '16px 16px 76px', maxWidth: '480px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <main style={{ flex: 1, padding: hideNav || hideHeader ? '0' : '16px 16px 76px', maxWidth: hideHeader ? 'none' : '480px', width: '100%', margin: '0 auto', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <Outlet />
       </main>
 
