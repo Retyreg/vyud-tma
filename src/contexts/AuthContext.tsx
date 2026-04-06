@@ -183,25 +183,35 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const loadUser = async () => {
     setLoading(true);
     try {
-      if (telegramMode) {
-        initTelegram();
-        // Telegram WebApp may need a tick to expose user data after ready()
-        await new Promise((r) => setTimeout(r, 100));
-        const tgUser = getTelegramUser();
-        if (tgUser) {
-          const email = getTelegramEmail();
-          const authUser = await fetchOrCreateUserByTelegramId(
-            tgUser.id, email, tgUser.username, tgUser.first_name
-          );
-          setUser(authUser);
-        }
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.email) {
-          const authUser = await fetchUserByEmail(session.user.email);
-          setUser(authUser);
-        }
-      }
+      const timeout = new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error('auth timeout')), 4000)
+      );
+      await Promise.race([
+        (async () => {
+          if (telegramMode) {
+            initTelegram();
+            // Telegram WebApp may need a tick to expose user data after ready()
+            await new Promise((r) => setTimeout(r, 100));
+            const tgUser = getTelegramUser();
+            if (tgUser) {
+              const email = getTelegramEmail();
+              const authUser = await fetchOrCreateUserByTelegramId(
+                tgUser.id, email, tgUser.username, tgUser.first_name
+              );
+              setUser(authUser);
+            }
+          } else {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user?.email) {
+              const authUser = await fetchUserByEmail(session.user.email);
+              setUser(authUser);
+            }
+          }
+        })(),
+        timeout,
+      ]);
+    } catch (e) {
+      console.warn('loadUser error or timeout:', e);
     } finally {
       setLoading(false);
     }

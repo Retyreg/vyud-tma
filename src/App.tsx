@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -8,7 +9,8 @@ import TestsPage from './pages/TestsPage';
 import TestPlayerPage from './pages/TestPlayerPage';
 import ProfilePage from './pages/ProfilePage';
 import HelpPage from './pages/HelpPage';
-import GraphPage from './pages/GraphPage';
+
+const GraphPage = lazy(() => import('./pages/GraphPage'));
 
 function App() {
   return (
@@ -18,7 +20,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/" element={<UploadPage />} />
-            <Route path="/graph" element={<GraphPage />} />
+            <Route path="/graph" element={<Suspense fallback={null}><GraphPage /></Suspense>} />
             <Route path="/tests" element={<TestsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/help" element={<HelpPage />} />
