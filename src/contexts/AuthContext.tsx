@@ -224,9 +224,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_OUT') {
           setUser(null);
+          setLoading(false);
         } else if (session?.user?.email) {
+          setLoading(true);
           const authUser = await fetchUserByEmail(session.user.email);
           setUser(authUser);
+          setLoading(false);
         }
       });
       return () => subscription.unsubscribe();

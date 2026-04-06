@@ -3,10 +3,12 @@ import type { FC } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { isTMA } from '../lib/telegram';
+import { useAuthContext } from '../contexts/AuthContext';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 const AuthPage: FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,8 +16,8 @@ const AuthPage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // TMA users never see /auth
-  if (isTMA()) return <Navigate to="/" replace />;
+  // TMA users and already-authenticated users never see /auth
+  if (isTMA() || user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
