@@ -3,8 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const TABS = [
   { path: '/', label: 'Главная', icon: '🏠', exact: true },
-  { path: '/graph', label: 'Граф', icon: '🧠', exact: false },
+  { path: '/leaderboard', label: 'Топ', icon: '🏆', exact: false },
   { path: '/tests', label: 'Тесты', icon: '📚', exact: false },
+  { path: '/graph', label: 'Граф', icon: '🧠', exact: false },
   { path: '/profile', label: 'Профиль', icon: '👤', exact: false },
 ];
 

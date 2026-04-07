@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import HelpPage from './pages/HelpPage';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<UploadPage />} />
             <Route path="/graph" element={<Suspense fallback={null}><GraphPage /></Suspense>} />
+            <Route path="/leaderboard" element={<Suspense fallback={null}><LeaderboardPage /></Suspense>} />
             <Route path="/tests" element={<TestsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/help" element={<HelpPage />} />
