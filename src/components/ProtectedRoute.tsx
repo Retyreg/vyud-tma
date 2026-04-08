@@ -14,6 +14,9 @@ const ProtectedRoute: FC = () => {
     return () => clearTimeout(t);
   }, [loading]);
 
+  // TMA mode — never block on auth loading, render immediately
+  if (isTMA()) return <Outlet />;
+
   if (loading) {
     if (timedOut) {
       return (
@@ -39,9 +42,6 @@ const ProtectedRoute: FC = () => {
       </div>
     );
   }
-
-  // TMA mode — always allow (no auth required)
-  if (isTMA()) return <Outlet />;
 
   // Browser mode — require auth session
   if (!user) return <Navigate to="/auth" replace />;
