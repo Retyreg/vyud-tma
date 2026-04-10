@@ -36,3 +36,5 @@ jobs:
           source: dist/
           target: /var/www/vyud-tma/
           strip_components: 1
+          overwrite: true
+          rm: true
