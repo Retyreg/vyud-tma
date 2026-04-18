@@ -9,6 +9,9 @@ import TestsPage from './pages/TestsPage';
 import TestPlayerPage from './pages/TestPlayerPage';
 import ProfilePage from './pages/ProfilePage';
 import HelpPage from './pages/HelpPage';
+import SOPListPage from './pages/SOPListPage';
+import SOPPlayerPage from './pages/SOPPlayerPage';
+import ManagerDashboard from './pages/ManagerDashboard';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -20,14 +23,17 @@ function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route path="/" element={<UploadPage />} />
+            <Route path="/" element={<SOPListPage />} />
+            <Route path="/upload" element={<UploadPage />} />
             <Route path="/graph" element={<Suspense fallback={null}><GraphPage /></Suspense>} />
             <Route path="/leaderboard" element={<Suspense fallback={null}><LeaderboardPage /></Suspense>} />
             <Route path="/tests" element={<TestsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/help" element={<HelpPage />} />
+            <Route path="/dashboard" element={<ManagerDashboard />} />
           </Route>
           <Route path="/test/:id" element={<TestPlayerPage />} />
+          <Route path="/sop/:id" element={<SOPPlayerPage />} />
         </Route>
       </Routes>
     </AuthProvider>

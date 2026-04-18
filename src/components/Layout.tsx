@@ -5,7 +5,7 @@ import BottomNav from './BottomNav';
 import { Zap } from 'lucide-react';
 
 const HIDE_HEADER_PATHS = ['/test/', '/graph'];
-const HIDE_NAV_PATHS = ['/test/', '/auth'];
+const HIDE_NAV_PATHS = ['/test/', '/auth', '/sop/'];
 
 const Layout: FC = () => {
   const { user } = useAuthContext();

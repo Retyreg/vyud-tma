@@ -1,19 +1,36 @@
+import { useMemo } from 'react';
 import type { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import type { LmsOrg } from '../api/lms';
 
-const TABS = [
-  { path: '/', label: 'Главная', icon: '🏠', exact: true },
+const BASE_TABS = [
+  { path: '/', label: 'Регламенты', icon: '📋', exact: true },
   { path: '/leaderboard', label: 'Топ', icon: '🏆', exact: false },
   { path: '/tests', label: 'Тесты', icon: '📚', exact: false },
   { path: '/graph', label: 'Граф', icon: '🧠', exact: false },
   { path: '/profile', label: 'Профиль', icon: '👤', exact: false },
 ];
 
+const DASHBOARD_TAB = { path: '/dashboard', label: 'Дашборд', icon: '📊', exact: false };
+
 const BottomNav: FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const isActive = (tab: typeof TABS[number]) =>
+  const isManager = useMemo(() => {
+    try {
+      const cached = localStorage.getItem('vyud_org');
+      if (!cached) return false;
+      const org: LmsOrg = JSON.parse(cached);
+      return Boolean(org.is_manager);
+    } catch {
+      return false;
+    }
+  }, [pathname]);
+
+  const TABS = isManager ? [...BASE_TABS, DASHBOARD_TAB] : BASE_TABS;
+
+  const isActive = (tab: (typeof BASE_TABS)[number]) =>
     tab.exact ? pathname === tab.path : pathname.startsWith(tab.path);
 
   return (
