@@ -89,6 +89,37 @@ export async function fetchOrgProgress(orgId: number, userKey: string): Promise<
   return res.json();
 }
 
+// ── Templates ──────────────────────────────────────────────────────────────
+
+export interface SOPTemplateItem {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string;
+  steps_count: number;
+  quiz_count: number;
+}
+
+export async function fetchTemplates(): Promise<SOPTemplateItem[]> {
+  const res = await fetch(`${LMS_URL}/api/templates`);
+  if (!res.ok) throw new Error('Не удалось загрузить шаблоны');
+  return res.json();
+}
+
+export async function cloneTemplate(
+  orgId: number,
+  templateId: number,
+  userKey: string,
+): Promise<{ status: string; sop_id: number; title: string; steps_count: number }> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(
+    `${LMS_URL}/api/orgs/${orgId}/templates/${templateId}/clone?${params}`,
+    { method: 'POST' },
+  );
+  if (!res.ok) throw new Error('Не удалось добавить шаблон');
+  return res.json();
+}
+
 export async function uploadSOPPdf(
   orgId: number,
   file: File,

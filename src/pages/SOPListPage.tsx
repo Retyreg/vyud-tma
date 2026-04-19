@@ -101,11 +101,26 @@ const SOPListPage: FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div>
-        <h1 style={{ fontSize: 20, margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>
-          Регламенты
-        </h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>{org.org_name}</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <h1 style={{ fontSize: 20, margin: '0 0 4px', fontWeight: 700, color: 'var(--text)' }}>
+            Регламенты
+          </h1>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>{org.org_name}</p>
+        </div>
+        {org.is_manager && (
+          <button
+            onClick={() => navigate('/templates')}
+            style={{
+              flexShrink: 0, padding: '8px 14px', borderRadius: 10,
+              background: 'var(--primary-light)', border: '1px solid var(--border)',
+              color: 'var(--primary)', fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', minHeight: 36,
+            }}
+          >
+            📚 Шаблоны
+          </button>
+        )}
       </div>
 
       {sops.length === 0 ? (
