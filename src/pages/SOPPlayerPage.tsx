@@ -3,7 +3,10 @@ import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { fetchSOP, completeSOP } from '../api/sop';
-import type { SOPWithSteps } from '../api/sop';
+import type { SOPWithSteps, QuizQuestion } from '../api/sop';
+
+/** Convert "A"/"B"/"C"/"D" to 0/1/2/3 */
+const letterToIndex = (letter: string) => Math.max(0, 'ABCD'.indexOf(letter.toUpperCase()));
 import { ChevronLeft, Loader2 } from 'lucide-react';
 
 type Mode = 'steps' | 'quiz' | 'done';
@@ -82,9 +85,9 @@ const SOPPlayerPage: FC = () => {
   const handleAnswer = async (optionIdx: number) => {
     if (!sop || isAnswered) return;
 
-    const questions = sop.quiz_json?.questions ?? [];
+    const questions: QuizQuestion[] = sop.quiz_json ?? [];
     const question = questions[quizIndex];
-    const correct = question.correct === optionIdx;
+    const correct = letterToIndex(question.correct_answer) === optionIdx;
 
     setSelectedAnswer(optionIdx);
     setIsAnswered(true);
@@ -147,7 +150,7 @@ const SOPPlayerPage: FC = () => {
   }
 
   const steps = sop.steps;
-  const questions = sop.quiz_json?.questions ?? [];
+  const questions: QuizQuestion[] = sop.quiz_json ?? [];
   const hasQuiz = questions.length > 0;
 
   // ── Done screen ──────────────────────────────────────────────────────────
@@ -319,7 +322,7 @@ const SOPPlayerPage: FC = () => {
       if (!isAnswered) {
         return { ...base, background: 'var(--tg-theme-secondary-bg-color, var(--card))', color: 'var(--text)' };
       }
-      if (idx === question.correct) {
+      if (idx === letterToIndex(question.correct_answer)) {
         return { ...base, background: '#dcfce7', color: '#16a34a', border: '1px solid #86efac' };
       }
       if (idx === selectedAnswer) {

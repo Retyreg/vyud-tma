@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
-import { fetchSOPs, fetchSOPProgress } from '../api/sop';
-import type { SOP, SOPCompletion } from '../api/sop';
+import { fetchOrgProgress } from '../api/sop';
+import type { OrgProgress } from '../api/sop';
 import { Loader2 } from 'lucide-react';
 
 const ManagerDashboard: FC = () => {
@@ -15,8 +15,7 @@ const ManagerDashboard: FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [org, setOrg] = useState<LmsOrg | null>(null);
-  const [sops, setSops] = useState<SOP[]>([]);
-  const [progressMap, setProgressMap] = useState<Record<number, SOPCompletion[]>>({});
+  const [progress, setProgress] = useState<OrgProgress | null>(null);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -41,24 +40,11 @@ const ManagerDashboard: FC = () => {
         }
 
         setOrg(currentOrg);
-        if (!currentOrg) { setLoading(false); return; }
+        if (!currentOrg || !currentOrg.is_manager) { setLoading(false); return; }
 
-        // Access check
-        if (!currentOrg.is_manager) { setLoading(false); return; }
-
-        // Fetch SOPs and all progress in parallel
-        const sopList = await fetchSOPs(currentOrg.org_id);
-        setSops(sopList);
-
-        const results = await Promise.allSettled(
-          sopList.map((sop) => fetchSOPProgress(sop.id))
-        );
-
-        const map: Record<number, SOPCompletion[]> = {};
-        results.forEach((result, idx) => {
-          map[sopList[idx].id] = result.status === 'fulfilled' ? result.value : [];
-        });
-        setProgressMap(map);
+        // Single call — backend returns full employee × SOP matrix
+        const data = await fetchOrgProgress(currentOrg.org_id, userKey);
+        setProgress(data);
       } catch (e: any) {
         setError(e.message || 'Ошибка загрузки');
       } finally {
@@ -69,22 +55,19 @@ const ManagerDashboard: FC = () => {
     load();
   }, [userKey]);
 
-  // Unique employees across all completions
-  const allUserKeys = useMemo(() => {
-    const keys = new Set<string>();
-    Object.values(progressMap).forEach((completions) =>
-      completions.forEach((c) => keys.add(c.user_key))
-    );
-    return Array.from(keys).sort();
-  }, [progressMap]);
+  const employees = useMemo(
+    () => (progress?.members ?? []).filter((m) => !m.is_manager),
+    [progress],
+  );
 
-  // Count employees who completed ALL sops
+  const sops = progress?.sops ?? [];
+
   const completedAllCount = useMemo(
     () =>
-      allUserKeys.filter((key) =>
-        sops.every((sop) => (progressMap[sop.id] ?? []).some((c) => c.user_key === key))
+      employees.filter((emp) =>
+        sops.every((sop) => emp.sops.find((s) => s.sop_id === sop.id)?.completed)
       ).length,
-    [allUserKeys, sops, progressMap]
+    [employees, sops],
   );
 
   // ── States ───────────────────────────────────────────────────────────────
@@ -139,8 +122,6 @@ const ManagerDashboard: FC = () => {
 
   // ── Dashboard ────────────────────────────────────────────────────────────
 
-  const totalEmployees = allUserKeys.length;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Title */}
@@ -158,7 +139,7 @@ const ManagerDashboard: FC = () => {
         <span style={{ fontSize: 36 }}>📊</span>
         <div>
           <div style={{ fontWeight: 800, fontSize: 22, color: 'var(--primary)' }}>
-            {completedAllCount} из {totalEmployees}
+            {completedAllCount} из {employees.length}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
             сотрудников прошли все регламенты
@@ -167,7 +148,7 @@ const ManagerDashboard: FC = () => {
       </div>
 
       {/* Matrix */}
-      {sops.length === 0 || totalEmployees === 0 ? (
+      {sops.length === 0 || employees.length === 0 ? (
         <div style={{ padding: '32px 0', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
             {sops.length === 0
@@ -205,9 +186,9 @@ const ManagerDashboard: FC = () => {
               </tr>
             </thead>
             <tbody>
-              {allUserKeys.map((key, rowIdx) => (
+              {employees.map((emp, rowIdx) => (
                 <tr
-                  key={key}
+                  key={emp.user_key}
                   style={{
                     background: rowIdx % 2 === 0
                       ? 'var(--tg-theme-bg-color, var(--bg))'
@@ -223,18 +204,18 @@ const ManagerDashboard: FC = () => {
                       : 'var(--tg-theme-secondary-bg-color, var(--card))',
                     maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    {key}
+                    {emp.user_key}
                   </td>
                   {sops.map((sop) => {
-                    const completion = (progressMap[sop.id] ?? []).find((c) => c.user_key === key);
+                    const entry = emp.sops.find((s) => s.sop_id === sop.id);
                     return (
                       <td key={sop.id} style={{
                         padding: '10px 12px', textAlign: 'center',
                         borderBottom: '1px solid var(--border)',
                       }}>
-                        {completion ? (
+                        {entry?.completed ? (
                           <span style={{ color: '#16a34a', fontWeight: 700, fontSize: 13 }}>
-                            ✅ {completion.score}/{completion.max_score}
+                            ✅ {entry.score}/{entry.max_score}
                           </span>
                         ) : (
                           <span style={{ color: 'var(--text-secondary)', fontSize: 16 }}>⏳</span>
