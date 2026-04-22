@@ -6,7 +6,7 @@ import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
 import { fetchOrgProgress } from '../api/sop';
 import type { OrgProgress } from '../api/sop';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Copy, CheckCheck } from 'lucide-react';
 
 const ManagerDashboard: FC = () => {
   const { user } = useAuthContext();
@@ -16,6 +16,7 @@ const ManagerDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [progress, setProgress] = useState<OrgProgress | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -120,6 +121,20 @@ const ManagerDashboard: FC = () => {
     );
   }
 
+  const BOT_USERNAME = 'VyudAiBot';
+  const inviteLink = org ? `https://t.me/${BOT_USERNAME}?startapp=invite_${org.invite_code}` : '';
+
+  const handleCopyInvite = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard not available — show link as fallback
+    }
+  };
+
   // ── Dashboard ────────────────────────────────────────────────────────────
 
   return (
@@ -128,6 +143,35 @@ const ManagerDashboard: FC = () => {
       <div>
         <h1 style={{ fontSize: 20, margin: '0 0 4px', fontWeight: 700 }}>Дашборд</h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>{org.org_name}</p>
+      </div>
+
+      {/* Invite card */}
+      <div style={{
+        borderRadius: 14, padding: '14px 16px',
+        background: 'var(--card)', border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Пригласить сотрудника</div>
+          <div style={{
+            fontSize: 12, color: 'var(--text-secondary)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {inviteLink}
+          </div>
+        </div>
+        <button
+          onClick={handleCopyInvite}
+          style={{
+            flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: copied ? '#16a34a' : 'var(--primary)',
+            color: 'white', fontSize: 13, fontWeight: 600, transition: 'background 0.2s',
+          }}
+        >
+          {copied ? <CheckCheck size={15} /> : <Copy size={15} />}
+          {copied ? 'Скопировано' : 'Копировать'}
+        </button>
       </div>
 
       {/* Summary card */}
@@ -204,7 +248,7 @@ const ManagerDashboard: FC = () => {
                       : 'var(--tg-theme-secondary-bg-color, var(--card))',
                     maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    {emp.user_key}
+                    {emp.display_name ?? emp.user_key}
                   </td>
                   {sops.map((sop) => {
                     const entry = emp.sops.find((s) => s.sop_id === sop.id);

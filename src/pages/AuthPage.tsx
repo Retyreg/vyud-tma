@@ -64,7 +64,7 @@ const AuthPage: FC = () => {
           <span style={{ fontSize: '48px' }}>⚡</span>
           <h1 style={{ margin: '8px 0 4px', fontSize: '26px', color: 'var(--primary)' }}>VYUD AI</h1>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Платформа для генерации тестов из документов
+            Обучение сотрудников по регламентам — быстро и без лишнего
           </p>
         </div>
 

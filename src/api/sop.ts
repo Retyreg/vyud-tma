@@ -41,6 +41,7 @@ export interface OrgProgress {
   sops: { id: number; title: string }[];
   members: {
     user_key: string;
+    display_name: string | null;
     is_manager: boolean;
     sops: {
       sop_id: number;

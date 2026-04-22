@@ -25,6 +25,10 @@ export const getTelegramEmail = (): string => {
   return `${user.username || `user${user.id}`}@telegram.io`;
 };
 
+export const getTelegramStartParam = (): string | null => {
+  return getTg()?.initDataUnsafe?.start_param ?? null;
+};
+
 export const applyTelegramTheme = () => {
   try {
     const tg = getTg();

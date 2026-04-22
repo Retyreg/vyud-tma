@@ -44,13 +44,14 @@ export async function getUserOrgs(userKey: string): Promise<LmsOrg[]> {
 export async function joinOrg(
   inviteCode: string,
   userKey: string,
+  displayName?: string,
 ): Promise<{ org_id: number; org_name: string }> {
   const res = await fetch(
     `${LMS_URL}/api/orgs/join?invite_code=${encodeURIComponent(inviteCode)}`,
     {
       method: 'POST',
       headers: lmsHeaders(),
-      body: JSON.stringify({ user_key: userKey }),
+      body: JSON.stringify({ user_key: userKey, display_name: displayName ?? null }),
     },
   );
   if (!res.ok) throw new Error('Неверный код приглашения');

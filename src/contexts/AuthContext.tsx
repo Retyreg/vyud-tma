@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { FC, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { isTMA, getTelegramUser, getTelegramEmail, initTelegram } from '../lib/telegram';
+import { isTMA, getTelegramUser, getTelegramEmail, getTelegramStartParam, initTelegram } from '../lib/telegram';
+import { joinOrg } from '../api/lms';
 
 export interface AuthUser {
   telegram_id?: number;
@@ -199,6 +200,29 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 tgUser.id, email, tgUser.username, tgUser.first_name
               );
               setUser(authUser);
+
+              // Auto-join org if launched via invite deep link: t.me/Bot?startapp=invite_CODE
+              const startParam = getTelegramStartParam();
+              if (startParam?.startsWith('invite_') && authUser) {
+                const inviteCode = startParam.slice('invite_'.length);
+                const userKey = String(tgUser.id);
+                const displayName = tgUser.first_name
+                  ? tgUser.username
+                    ? `${tgUser.first_name} (@${tgUser.username})`
+                    : tgUser.first_name
+                  : tgUser.username ?? userKey;
+                try {
+                  const joined = await joinOrg(inviteCode, userKey, displayName);
+                  localStorage.setItem('vyud_org', JSON.stringify({
+                    org_id: joined.org_id,
+                    org_name: joined.org_name,
+                    invite_code: inviteCode,
+                    is_manager: false,
+                  }));
+                } catch {
+                  // Non-fatal — user will see SOP list, org lookup happens there
+                }
+              }
             }
           } else {
             const { data: { session } } = await supabase.auth.getSession();
