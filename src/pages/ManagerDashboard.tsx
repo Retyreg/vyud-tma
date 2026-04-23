@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
-import { fetchOrgProgress, fetchAssignments, createAssignment } from '../api/sop';
-import type { OrgProgress, AssignmentItem } from '../api/sop';
+import { fetchOrgProgress, createAssignment } from '../api/sop';
+import type { OrgProgress } from '../api/sop';
 import { Loader2, Copy, CheckCheck } from 'lucide-react';
 
 const ManagerDashboard: FC = () => {
@@ -16,7 +16,6 @@ const ManagerDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [progress, setProgress] = useState<OrgProgress | null>(null);
-  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
   const [copied, setCopied] = useState(false);
 
   // Assign modal state
@@ -51,12 +50,8 @@ const ManagerDashboard: FC = () => {
         setOrg(currentOrg);
         if (!currentOrg || !currentOrg.is_manager) { setLoading(false); return; }
 
-        const [data, assignList] = await Promise.all([
-          fetchOrgProgress(currentOrg.org_id, userKey),
-          fetchAssignments(currentOrg.org_id, userKey).catch(() => []),
-        ]);
+        const data = await fetchOrgProgress(currentOrg.org_id, userKey);
         setProgress(data);
-        setAssignments(assignList);
       } catch (e: any) {
         setError(e.message || 'Ошибка загрузки');
       } finally {
@@ -137,11 +132,7 @@ const ManagerDashboard: FC = () => {
     setAssignLoading(true);
     setAssignError('');
     try {
-      const item = await createAssignment(org.org_id, userKey, assignModal.sopId, assignUserKey, assignDeadline);
-      setAssignments((prev) => {
-        const filtered = prev.filter((a) => !(a.sop_id === item.sop_id && a.user_key === item.user_key));
-        return [...filtered, item];
-      });
+      await createAssignment(org.org_id, userKey, assignModal.sopId, assignUserKey, assignDeadline);
       setAssignModal(null);
       setAssignUserKey('');
       setAssignDeadline('');
