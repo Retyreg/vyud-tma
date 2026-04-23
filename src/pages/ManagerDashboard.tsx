@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
-import { fetchOrgProgress } from '../api/sop';
-import type { OrgProgress } from '../api/sop';
+import { fetchOrgProgress, fetchAssignments, createAssignment } from '../api/sop';
+import type { OrgProgress, AssignmentItem } from '../api/sop';
 import { Loader2, Copy, CheckCheck } from 'lucide-react';
 
 const ManagerDashboard: FC = () => {
@@ -16,7 +16,15 @@ const ManagerDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [progress, setProgress] = useState<OrgProgress | null>(null);
+  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
   const [copied, setCopied] = useState(false);
+
+  // Assign modal state
+  const [assignModal, setAssignModal] = useState<{ sopId: number; sopTitle: string } | null>(null);
+  const [assignUserKey, setAssignUserKey] = useState('');
+  const [assignDeadline, setAssignDeadline] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignError, setAssignError] = useState('');
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -43,9 +51,12 @@ const ManagerDashboard: FC = () => {
         setOrg(currentOrg);
         if (!currentOrg || !currentOrg.is_manager) { setLoading(false); return; }
 
-        // Single call — backend returns full employee × SOP matrix
-        const data = await fetchOrgProgress(currentOrg.org_id, userKey);
+        const [data, assignList] = await Promise.all([
+          fetchOrgProgress(currentOrg.org_id, userKey),
+          fetchAssignments(currentOrg.org_id, userKey).catch(() => []),
+        ]);
         setProgress(data);
+        setAssignments(assignList);
       } catch (e: any) {
         setError(e.message || 'Ошибка загрузки');
       } finally {
@@ -120,6 +131,26 @@ const ManagerDashboard: FC = () => {
       </div>
     );
   }
+
+  const handleAssignSubmit = async () => {
+    if (!assignUserKey || !assignDeadline || !org || !assignModal || !userKey) return;
+    setAssignLoading(true);
+    setAssignError('');
+    try {
+      const item = await createAssignment(org.org_id, userKey, assignModal.sopId, assignUserKey, assignDeadline);
+      setAssignments((prev) => {
+        const filtered = prev.filter((a) => !(a.sop_id === item.sop_id && a.user_key === item.user_key));
+        return [...filtered, item];
+      });
+      setAssignModal(null);
+      setAssignUserKey('');
+      setAssignDeadline('');
+    } catch (e: any) {
+      setAssignError(e.message || 'Ошибка');
+    } finally {
+      setAssignLoading(false);
+    }
+  };
 
   const BOT_USERNAME = 'VyudAiBot';
   const inviteLink = org ? `https://t.me/${BOT_USERNAME}?startapp=invite_${org.invite_code}` : '';
@@ -224,7 +255,17 @@ const ManagerDashboard: FC = () => {
                     maxWidth: 100, minWidth: 90,
                     wordBreak: 'break-word',
                   }}>
-                    {sop.title.length > 20 ? `${sop.title.slice(0, 20)}…` : sop.title}
+                    <div>{sop.title.length > 20 ? `${sop.title.slice(0, 20)}…` : sop.title}</div>
+                    <button
+                      onClick={() => { setAssignModal({ sopId: sop.id, sopTitle: sop.title }); setAssignError(''); }}
+                      style={{
+                        marginTop: 4, fontSize: 10, padding: '2px 8px', borderRadius: 6,
+                        border: 'none', cursor: 'pointer', fontWeight: 600,
+                        background: 'var(--primary-light)', color: 'var(--primary)',
+                      }}
+                    >
+                      + Назначить
+                    </button>
                   </th>
                 ))}
               </tr>
@@ -271,6 +312,87 @@ const ManagerDashboard: FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {/* Assign modal */}
+      {assignModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          zIndex: 1000, padding: '0 0 0 0',
+        }} onClick={(e) => { if (e.target === e.currentTarget) setAssignModal(null); }}>
+          <div style={{
+            background: 'var(--bg)', borderRadius: '20px 20px 0 0',
+            padding: '24px 20px 32px', width: '100%', maxWidth: 500,
+            display: 'flex', flexDirection: 'column', gap: 14,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Назначить регламент</h3>
+              <button onClick={() => setAssignModal(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text-secondary)' }}>×</button>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+              📋 <b>{assignModal.sopTitle}</b>
+            </p>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                Сотрудник
+              </label>
+              <select
+                value={assignUserKey}
+                onChange={(e) => setAssignUserKey(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--card)',
+                  color: 'var(--text)', fontSize: 14, boxSizing: 'border-box',
+                }}
+              >
+                <option value="">Выберите сотрудника</option>
+                {employees.map((emp) => (
+                  <option key={emp.user_key} value={emp.user_key}>
+                    {emp.display_name ?? emp.user_key}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                Дедлайн
+              </label>
+              <input
+                type="date"
+                value={assignDeadline}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setAssignDeadline(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--card)',
+                  color: 'var(--text)', fontSize: 14, boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {assignError && (
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--error)' }}>{assignError}</p>
+            )}
+
+            <button
+              onClick={handleAssignSubmit}
+              disabled={assignLoading || !assignUserKey || !assignDeadline}
+              style={{
+                padding: '13px', borderRadius: 12, fontWeight: 700, fontSize: 15,
+                background: 'var(--primary)', color: 'white', border: 'none',
+                cursor: assignLoading || !assignUserKey || !assignDeadline ? 'default' : 'pointer',
+                opacity: assignLoading || !assignUserKey || !assignDeadline ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              {assignLoading
+                ? <><Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> Назначаем...</>
+                : '📤 Назначить'}
+            </button>
+          </div>
         </div>
       )}
     </div>

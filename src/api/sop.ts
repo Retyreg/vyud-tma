@@ -90,6 +90,58 @@ export async function fetchOrgProgress(orgId: number, userKey: string): Promise<
   return res.json();
 }
 
+// ── Assignments ───────────────────────────────────────────────────────────
+
+export interface AssignmentItem {
+  id: number;
+  sop_id: number;
+  sop_title: string;
+  user_key: string;
+  display_name: string | null;
+  deadline: string;
+  completed: boolean;
+  overdue: boolean;
+}
+
+export interface MyAssignment {
+  sop_id: number;
+  deadline: string;
+  days_left: number;
+  completed: boolean;
+  overdue: boolean;
+}
+
+export async function createAssignment(
+  orgId: number,
+  managerKey: string,
+  sopId: number,
+  userKey: string,
+  deadline: string,
+): Promise<AssignmentItem> {
+  const params = new URLSearchParams({ user_key: managerKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/assignments?${params}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sop_id: sopId, user_key: userKey, deadline }),
+  });
+  if (!res.ok) throw new Error('Не удалось создать назначение');
+  return res.json();
+}
+
+export async function fetchAssignments(orgId: number, managerKey: string): Promise<AssignmentItem[]> {
+  const params = new URLSearchParams({ user_key: managerKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/assignments?${params}`);
+  if (!res.ok) throw new Error('Не удалось загрузить назначения');
+  return res.json();
+}
+
+export async function fetchMyAssignments(orgId: number, userKey: string): Promise<MyAssignment[]> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/my-assignments?${params}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 // ── Templates ──────────────────────────────────────────────────────────────
 
 export interface SOPTemplateItem {

@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
-import { fetchSOPs } from '../api/sop';
-import type { SOPListItem } from '../api/sop';
+import { fetchSOPs, fetchMyAssignments } from '../api/sop';
+import type { SOPListItem, MyAssignment } from '../api/sop';
 import { Loader2 } from 'lucide-react';
 
 const SOPListPage: FC = () => {
@@ -16,6 +16,7 @@ const SOPListPage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sops, setSops] = useState<SOPListItem[]>([]);
   const [org, setOrg] = useState<LmsOrg | null>(null);
+  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -44,9 +45,12 @@ const SOPListPage: FC = () => {
         setOrg(currentOrg);
         if (!currentOrg) { setLoading(false); return; }
 
-        // fetchSOPs already returns is_completed per SOP for this userKey
-        const sopList = await fetchSOPs(currentOrg.org_id, userKey);
+        const [sopList, myAssignments] = await Promise.all([
+          fetchSOPs(currentOrg.org_id, userKey),
+          fetchMyAssignments(currentOrg.org_id, userKey),
+        ]);
         setSops(sopList);
+        setAssignments(myAssignments);
       } catch (e: any) {
         setError(e.message || 'Ошибка загрузки');
       } finally {
@@ -131,60 +135,82 @@ const SOPListPage: FC = () => {
           </p>
         </div>
       ) : (
-        sops.map((sop) => (
-          <button
-            key={sop.id}
-            onClick={() => navigate(`/sop/${sop.id}`)}
-            style={{
-              width: '100%', textAlign: 'left',
-              padding: '14px 16px', borderRadius: 14,
-              border: '1px solid var(--border)',
-              background: 'var(--tg-theme-secondary-bg-color, var(--card))',
-              cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 12,
-              minHeight: 44,
-            }}
-          >
-            <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>
-              {sop.is_completed ? '✅' : '📋'}
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontWeight: 700, fontSize: 15, color: 'var(--text)',
-                marginBottom: 4, lineHeight: 1.3,
-              }}>
-                {sop.title}
-              </div>
-              {sop.description && (
+        sops.map((sop) => {
+          const assignment = assignments.find((a) => a.sop_id === sop.id);
+          return (
+            <button
+              key={sop.id}
+              onClick={() => navigate(`/sop/${sop.id}`)}
+              style={{
+                width: '100%', textAlign: 'left',
+                padding: '14px 16px', borderRadius: 14,
+                border: assignment?.overdue
+                  ? '1px solid #fca5a5'
+                  : assignment
+                  ? '1px solid #fde68a'
+                  : '1px solid var(--border)',
+                background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+                cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 12,
+                minHeight: 44,
+              }}
+            >
+              <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>
+                {sop.is_completed ? '✅' : '📋'}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8,
-                  overflow: 'hidden', textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
+                  fontWeight: 700, fontSize: 15, color: 'var(--text)',
+                  marginBottom: 4, lineHeight: 1.3,
                 }}>
-                  {sop.description}
+                  {sop.title}
                 </div>
-              )}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{
-                  fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
-                  background: sop.status === 'published' ? '#dcfce7' : '#fef9c3',
-                  color: sop.status === 'published' ? '#16a34a' : '#854d0e',
-                }}>
-                  {sop.status === 'published' ? 'Опубликован' : 'Черновик'}
-                </span>
-                {sop.is_completed && (
+                {sop.description && (
+                  <div style={{
+                    fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8,
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                  }}>
+                    {sop.description}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{
                     fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
-                    background: '#dcfce7', color: '#16a34a',
+                    background: sop.status === 'published' ? '#dcfce7' : '#fef9c3',
+                    color: sop.status === 'published' ? '#16a34a' : '#854d0e',
                   }}>
-                    Пройден
+                    {sop.status === 'published' ? 'Опубликован' : 'Черновик'}
                   </span>
-                )}
+                  {sop.is_completed && (
+                    <span style={{
+                      fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+                      background: '#dcfce7', color: '#16a34a',
+                    }}>
+                      Пройден
+                    </span>
+                  )}
+                  {assignment && !sop.is_completed && (
+                    <span style={{
+                      fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+                      background: assignment.overdue ? '#fee2e2' : assignment.days_left <= 1 ? '#fef9c3' : '#eff6ff',
+                      color: assignment.overdue ? '#dc2626' : assignment.days_left <= 1 ? '#854d0e' : '#1d4ed8',
+                    }}>
+                      {assignment.overdue
+                        ? '⚠️ Просрочен'
+                        : assignment.days_left === 0
+                        ? '⏰ Сегодня'
+                        : assignment.days_left === 1
+                        ? '⏰ Завтра'
+                        : `до ${new Date(assignment.deadline).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}`}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          </button>
-        ))
+            </button>
+          );
+        })
       )}
     </div>
   );
