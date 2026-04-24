@@ -6,6 +6,7 @@ import { fetchTemplates, cloneTemplate } from '../api/sop';
 import type { SOPTemplateItem } from '../api/sop';
 import type { LmsOrg } from '../api/lms';
 import { Loader2, ChevronLeft } from 'lucide-react';
+import FreeLimitSheet from '../components/FreeLimitSheet';
 
 const CATEGORY_LABELS: Record<string, string> = {
   HoReCa: '🍽️ HoReCa',
@@ -22,6 +23,7 @@ const TemplatesPage: FC = () => {
   const [templates, setTemplates] = useState<SOPTemplateItem[]>([]);
   const [cloning, setCloning] = useState<number | null>(null);
   const [cloned, setCloned] = useState<Set<number>>(new Set());
+  const [showLimitSheet, setShowLimitSheet] = useState(false);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : '';
 
@@ -46,7 +48,11 @@ const TemplatesPage: FC = () => {
       await cloneTemplate(org.org_id, template.id, userKey);
       setCloned((prev) => new Set(prev).add(template.id));
     } catch (e: any) {
-      alert(e.message || 'Ошибка при добавлении шаблона');
+      if (e.code === 'free_limit' || e.message?.includes('free_limit')) {
+        setShowLimitSheet(true);
+      } else {
+        alert(e.message || 'Ошибка при добавлении шаблона');
+      }
     } finally {
       setCloning(null);
     }
@@ -80,6 +86,7 @@ const TemplatesPage: FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {showLimitSheet && <FreeLimitSheet onClose={() => setShowLimitSheet(false)} />}
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button

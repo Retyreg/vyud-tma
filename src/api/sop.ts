@@ -170,7 +170,16 @@ export async function cloneTemplate(
     `${LMS_URL}/api/orgs/${orgId}/templates/${templateId}/clone?${params}`,
     { method: 'POST' },
   );
-  if (!res.ok) throw new Error('Не удалось добавить шаблон');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const detail = body?.detail;
+    if (res.status === 403 && detail?.code === 'free_limit') {
+      const err: any = new Error('free_limit');
+      err.code = 'free_limit';
+      throw err;
+    }
+    throw new Error('Не удалось добавить шаблон');
+  }
   return res.json();
 }
 
