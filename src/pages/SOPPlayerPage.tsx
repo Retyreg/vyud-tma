@@ -20,6 +20,8 @@ const SOPPlayerPage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sop, setSop] = useState<SOPWithSteps | null>(null);
 
+  const [certToken, setCertToken] = useState<string | null>(null);
+
   // Steps state
   const [mode, setMode] = useState<Mode>('steps');
   const [stepIndex, setStepIndex] = useState(0);
@@ -64,12 +66,13 @@ const SOPPlayerPage: FC = () => {
   const submitCompletion = async (s: number, maxScore: number) => {
     const timeSpent = Math.round((Date.now() - quizStartRef.current) / 1000);
     try {
-      await completeSOP(Number(id), {
+      const result = await completeSOP(Number(id), {
         user_key: userKey,
         score: s,
         max_score: maxScore,
         time_spent_sec: timeSpent,
       });
+      if (result.cert_token) setCertToken(result.cert_token);
     } catch (e) {
       console.error('Failed to save completion:', e);
     }
@@ -182,16 +185,33 @@ const SOPPlayerPage: FC = () => {
           </div>
         )}
 
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            width: '100%', maxWidth: 320, padding: '14px', borderRadius: 12,
-            fontWeight: 700, fontSize: 16, background: 'var(--primary)',
-            color: 'white', border: 'none', cursor: 'pointer',
-          }}
-        >
-          Вернуться к списку
-        </button>
+        <div style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {certToken && (
+            <a
+              href={`https://lms.vyud.online/cert/${certToken}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '13px', borderRadius: 12, fontWeight: 700, fontSize: 15,
+                background: '#7C3AED', color: 'white', textDecoration: 'none',
+                width: '100%', boxSizing: 'border-box',
+              }}
+            >
+              🏆 Открыть сертификат
+            </a>
+          )}
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 12,
+              fontWeight: 700, fontSize: 16, background: 'var(--primary)',
+              color: 'white', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Вернуться к списку
+          </button>
+        </div>
       </div>
     );
   }

@@ -72,7 +72,7 @@ export async function fetchSOP(sopId: number): Promise<SOPWithSteps> {
 export async function completeSOP(
   sopId: number,
   data: { user_key: string; score: number; max_score: number; time_spent_sec: number },
-): Promise<void> {
+): Promise<{ status: string; sop_id: number; score: number; max_score: number; cert_token?: string }> {
   const params = new URLSearchParams({
     user_key: data.user_key,
     score: String(data.score),
@@ -81,6 +81,7 @@ export async function completeSOP(
   });
   const res = await fetch(`${LMS_URL}/api/sops/${sopId}/complete?${params}`, { method: 'POST' });
   if (!res.ok) throw new Error('Не удалось сохранить прохождение');
+  return res.json();
 }
 
 export async function fetchOrgProgress(orgId: number, userKey: string): Promise<OrgProgress> {
