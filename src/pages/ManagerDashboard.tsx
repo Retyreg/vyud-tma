@@ -6,7 +6,7 @@ import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
 import { fetchOrgProgress, createAssignment } from '../api/sop';
 import type { OrgProgress } from '../api/sop';
-import { Loader2, Copy, CheckCheck } from 'lucide-react';
+import { Loader2, Copy, CheckCheck, Pencil } from 'lucide-react';
 
 const ManagerDashboard: FC = () => {
   const { user } = useAuthContext();
@@ -247,16 +247,29 @@ const ManagerDashboard: FC = () => {
                     wordBreak: 'break-word',
                   }}>
                     <div>{sop.title.length > 20 ? `${sop.title.slice(0, 20)}…` : sop.title}</div>
-                    <button
-                      onClick={() => { setAssignModal({ sopId: sop.id, sopTitle: sop.title }); setAssignError(''); }}
-                      style={{
-                        marginTop: 4, fontSize: 10, padding: '2px 8px', borderRadius: 6,
-                        border: 'none', cursor: 'pointer', fontWeight: 600,
-                        background: 'var(--primary-light)', color: 'var(--primary)',
-                      }}
-                    >
-                      + Назначить
-                    </button>
+                    <div style={{ display: 'flex', gap: 4, marginTop: 4, justifyContent: 'center' }}>
+                      <button
+                        onClick={() => { setAssignModal({ sopId: sop.id, sopTitle: sop.title }); setAssignError(''); }}
+                        style={{
+                          fontSize: 10, padding: '2px 8px', borderRadius: 6,
+                          border: 'none', cursor: 'pointer', fontWeight: 600,
+                          background: 'var(--primary-light)', color: 'var(--primary)',
+                        }}
+                      >
+                        + Назначить
+                      </button>
+                      <button
+                        onClick={() => navigate(`/sop/${sop.id}/edit`)}
+                        style={{
+                          fontSize: 10, padding: '2px 6px', borderRadius: 6,
+                          border: 'none', cursor: 'pointer',
+                          background: 'var(--tg-theme-secondary-bg-color, #f3f4f6)', color: 'var(--text-secondary)',
+                          display: 'flex', alignItems: 'center',
+                        }}
+                      >
+                        <Pencil size={10} />
+                      </button>
+                    </div>
                   </th>
                 ))}
               </tr>

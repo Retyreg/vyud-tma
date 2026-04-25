@@ -93,12 +93,21 @@ const SOPListPage: FC = () => {
 
   if (!org) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <div style={{ padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <span style={{ fontSize: 48 }}>🏢</span>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0, lineHeight: 1.5 }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0, lineHeight: 1.6 }}>
           Вы не состоите в организации.<br />
-          Попросите менеджера прислать инвайт.
+          Попросите менеджера прислать инвайт или создайте свою.
         </p>
+        <button
+          onClick={() => navigate('/onboarding')}
+          style={{
+            padding: '13px 28px', borderRadius: 14, fontWeight: 700, fontSize: 15,
+            background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer',
+          }}
+        >
+          Создать организацию →
+        </button>
       </div>
     );
   }

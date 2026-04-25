@@ -183,6 +183,30 @@ export async function cloneTemplate(
   return res.json();
 }
 
+export async function updateSOP(
+  sopId: number,
+  userKey: string,
+  data: {
+    title?: string;
+    description?: string;
+    steps?: { step_number: number; title: string; content: string }[];
+  },
+): Promise<void> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/sops/${sopId}?${params}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Не удалось сохранить изменения');
+}
+
+export async function deleteSOP(sopId: number, userKey: string): Promise<void> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/sops/${sopId}?${params}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Не удалось удалить регламент');
+}
+
 export async function uploadSOPPdf(
   orgId: number,
   file: File,

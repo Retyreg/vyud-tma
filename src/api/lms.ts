@@ -33,6 +33,19 @@ function lmsHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json', 'X-Init-Data': initData };
 }
 
+export async function createOrg(
+  name: string,
+  managerKey: string,
+): Promise<{ org_id: number; org_name: string; invite_code: string }> {
+  const res = await fetch(`${LMS_URL}/api/orgs`, {
+    method: 'POST',
+    headers: lmsHeaders(),
+    body: JSON.stringify({ name, manager_key: managerKey }),
+  });
+  if (!res.ok) throw new Error('Не удалось создать организацию');
+  return res.json();
+}
+
 export async function getUserOrgs(userKey: string): Promise<LmsOrg[]> {
   const res = await fetch(`${LMS_URL}/api/users/${encodeURIComponent(userKey)}/orgs`, {
     headers: lmsHeaders(),

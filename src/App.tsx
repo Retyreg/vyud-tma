@@ -13,6 +13,8 @@ import SOPListPage from './pages/SOPListPage';
 import SOPPlayerPage from './pages/SOPPlayerPage';
 import ManagerDashboard from './pages/ManagerDashboard';
 import TemplatesPage from './pages/TemplatesPage';
+import SOPEditPage from './pages/SOPEditPage';
+import OnboardingPage from './pages/OnboardingPage';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -36,6 +38,8 @@ function App() {
           </Route>
           <Route path="/test/:id" element={<TestPlayerPage />} />
           <Route path="/sop/:id" element={<SOPPlayerPage />} />
+          <Route path="/sop/:id/edit" element={<SOPEditPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
         </Route>
       </Routes>
     </AuthProvider>
