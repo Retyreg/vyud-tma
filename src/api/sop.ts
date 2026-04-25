@@ -38,7 +38,14 @@ export interface SOPWithSteps {
 
 export interface OrgProgress {
   org_name: string;
-  sops: { id: number; title: string }[];
+  sops: {
+    id: number;
+    title: string;
+    completed_count: number;
+    employee_count: number;
+    avg_score_pct: number | null;
+    avg_time_sec: number | null;
+  }[];
   members: {
     user_key: string;
     display_name: string | null;

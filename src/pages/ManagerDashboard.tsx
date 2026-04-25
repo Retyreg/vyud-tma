@@ -260,6 +260,11 @@ const ManagerDashboard: FC = () => {
                     wordBreak: 'break-word',
                   }}>
                     <div>{sop.title.length > 20 ? `${sop.title.slice(0, 20)}…` : sop.title}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>
+                      {sop.completed_count}/{sop.employee_count}
+                      {sop.avg_score_pct !== null ? ` · ${sop.avg_score_pct}%` : ''}
+                      {sop.avg_time_sec ? ` · ${Math.round(sop.avg_time_sec / 60)}м` : ''}
+                    </div>
                     <div style={{ display: 'flex', gap: 4, marginTop: 4, justifyContent: 'center' }}>
                       <button
                         onClick={() => { setAssignModal({ sopId: sop.id, sopTitle: sop.title }); setAssignError(''); }}
