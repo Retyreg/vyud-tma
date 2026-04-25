@@ -15,6 +15,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import TemplatesPage from './pages/TemplatesPage';
 import SOPEditPage from './pages/SOPEditPage';
 import OnboardingPage from './pages/OnboardingPage';
+import SOPUploadPage from './pages/SOPUploadPage';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -40,6 +41,7 @@ function App() {
           <Route path="/sop/:id" element={<SOPPlayerPage />} />
           <Route path="/sop/:id/edit" element={<SOPEditPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/upload-sop" element={<SOPUploadPage />} />
         </Route>
       </Routes>
     </AuthProvider>

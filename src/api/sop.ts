@@ -222,6 +222,15 @@ export async function uploadSOPPdf(
     method: 'POST',
     body: formData,
   });
-  if (!res.ok) throw new Error('Не удалось загрузить PDF');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const detail = body?.detail;
+    if (res.status === 403 && detail?.code === 'free_limit') {
+      const err: any = new Error('free_limit');
+      err.code = 'free_limit';
+      throw err;
+    }
+    throw new Error('Не удалось загрузить PDF');
+  }
   return res.json();
 }

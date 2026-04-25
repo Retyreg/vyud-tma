@@ -162,9 +162,22 @@ const ManagerDashboard: FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Title */}
-      <div>
-        <h1 style={{ fontSize: 20, margin: '0 0 4px', fontWeight: 700 }}>Дашборд</h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>{org.org_name}</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 20, margin: '0 0 4px', fontWeight: 700 }}>Дашборд</h1>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>{org.org_name}</p>
+        </div>
+        <button
+          onClick={() => navigate('/upload-sop')}
+          style={{
+            flexShrink: 0, padding: '8px 14px', borderRadius: 10,
+            fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer',
+            background: 'var(--primary)', color: 'white',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          📄 PDF
+        </button>
       </div>
 
       {/* Invite card */}
