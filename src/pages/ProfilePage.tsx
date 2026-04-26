@@ -1,13 +1,26 @@
+import { useState } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
-import { Zap, BookOpen, Star, LogOut, CreditCard, Calendar } from 'lucide-react';
+import { Zap, BookOpen, Star, LogOut, CreditCard, Calendar, Copy, RefreshCw } from 'lucide-react';
 import { isTMA } from '../lib/telegram';
+import type { LmsOrg } from '../api/lms';
+import { regenerateInvite } from '../api/lms';
 
 const ProfilePage: FC = () => {
   const { user, signOut } = useAuthContext();
   const navigate = useNavigate();
   const telegramMode = isTMA();
+  const userKey = user?.telegram_id ? String(user.telegram_id) : null;
+
+  const [org, setOrg] = useState<LmsOrg | null>(() => {
+    try {
+      const cached = localStorage.getItem('vyud_org');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+  const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   if (!user) return null;
 
@@ -18,6 +31,26 @@ const ProfilePage: FC = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handleCopyInvite = () => {
+    if (!org) return;
+    navigator.clipboard.writeText(org.invite_code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRegenerate = async () => {
+    if (!org || !userKey) return;
+    setRegenerating(true);
+    try {
+      const { invite_code } = await regenerateInvite(org.org_id, userKey);
+      const updated = { ...org, invite_code };
+      setOrg(updated);
+      localStorage.setItem('vyud_org', JSON.stringify(updated));
+    } catch { /* ignore */ } finally {
+      setRegenerating(false);
+    }
   };
 
   return (
@@ -62,6 +95,49 @@ const ProfilePage: FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Org card */}
+      {org && (
+        <div style={{
+          padding: '16px', borderRadius: '16px',
+          background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+          border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>{org.is_manager ? '👑' : '🏢'}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{org.org_name}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                {org.is_manager ? 'Менеджер' : 'Сотрудник'}
+              </div>
+            </div>
+          </div>
+          {org.is_manager && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                flex: 1, padding: '8px 12px', borderRadius: 8, background: 'var(--primary-light)',
+                border: '1px solid var(--border)', fontFamily: 'monospace', fontSize: 14,
+                color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {org.invite_code}
+              </div>
+              <button
+                onClick={handleCopyInvite}
+                style={{ padding: '8px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: copied ? '#16a34a' : 'var(--text-secondary)' }}
+              >
+                <Copy size={16} />
+              </button>
+              <button
+                onClick={handleRegenerate}
+                disabled={regenerating}
+                style={{ padding: '8px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+              >
+                <RefreshCw size={16} style={regenerating ? { animation: 'spin 0.8s linear infinite' } : undefined} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Credits big */}
       <div style={{

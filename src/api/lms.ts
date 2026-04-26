@@ -68,6 +68,13 @@ export async function removeOrgMember(orgId: number, managerKey: string, memberK
   if (!res.ok) throw new Error('Не удалось удалить участника');
 }
 
+export async function regenerateInvite(orgId: number, userKey: string): Promise<{ invite_code: string }> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/invite/regenerate?${params}`, { method: 'POST' });
+  if (!res.ok) throw new Error('Не удалось обновить код');
+  return res.json();
+}
+
 export async function getUserOrgs(userKey: string): Promise<LmsOrg[]> {
   const res = await fetch(`${LMS_URL}/api/users/${encodeURIComponent(userKey)}/orgs`, {
     headers: lmsHeaders(),
