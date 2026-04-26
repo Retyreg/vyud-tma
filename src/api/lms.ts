@@ -46,6 +46,28 @@ export async function createOrg(
   return res.json();
 }
 
+export interface OrgMemberItem {
+  user_key: string;
+  display_name: string | null;
+  is_manager: boolean;
+  joined_at: string | null;
+}
+
+export async function fetchOrgMembers(orgId: number, userKey: string): Promise<OrgMemberItem[]> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/members?${params}`);
+  if (!res.ok) throw new Error('Не удалось загрузить участников');
+  return res.json();
+}
+
+export async function removeOrgMember(orgId: number, managerKey: string, memberKey: string): Promise<void> {
+  const params = new URLSearchParams({ user_key: managerKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/members/${encodeURIComponent(memberKey)}?${params}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Не удалось удалить участника');
+}
+
 export async function getUserOrgs(userKey: string): Promise<LmsOrg[]> {
   const res = await fetch(`${LMS_URL}/api/users/${encodeURIComponent(userKey)}/orgs`, {
     headers: lmsHeaders(),

@@ -180,6 +180,17 @@ const ManagerDashboard: FC = () => {
           >
             📄 PDF
           </button>
+          <button
+            onClick={() => navigate('/members')}
+            style={{
+              flexShrink: 0, padding: '8px 10px', borderRadius: 10,
+              fontWeight: 700, fontSize: 13, border: '1px solid var(--border)', cursor: 'pointer',
+              background: 'var(--tg-theme-secondary-bg-color, var(--card))', color: 'var(--text)',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            👥
+          </button>
           {org && userKey && (
             <a
               href={`${import.meta.env.VITE_LMS_URL || 'http://38.180.229.254:8000'}/api/orgs/${org.org_id}/sop-progress/export-csv?user_key=${userKey}`}
