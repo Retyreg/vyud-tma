@@ -37,6 +37,22 @@ const SOPPlayerPage: FC = () => {
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : '';
 
+  const pageStartRef = useRef<number>(Date.now());
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - pageStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const fmtTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}с`;
+  };
+
   useEffect(() => {
     if (!id) return;
     const load = async () => {
@@ -294,8 +310,12 @@ const SOPPlayerPage: FC = () => {
         <div style={{
           padding: '12px 16px', borderTop: '1px solid var(--border)',
           background: 'var(--tg-theme-bg-color, var(--card))',
-          display: 'flex', gap: 10, flexShrink: 0,
+          display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0,
         }}>
+          <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)' }}>
+            ⏱ {fmtTime(elapsed)}
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
           {stepIndex > 0 && (
             <button
               onClick={() => setStepIndex((i) => i - 1)}
@@ -319,6 +339,7 @@ const SOPPlayerPage: FC = () => {
           >
             {isLast ? (hasQuiz ? 'Перейти к тесту →' : '✅ Завершить') : 'Далее →'}
           </button>
+          </div>
         </div>
       </div>
     );
