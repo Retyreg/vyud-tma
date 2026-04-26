@@ -63,11 +63,22 @@ export interface OrgProgress {
 
 // ── API functions ──────────────────────────────────────────────────────────
 
-export async function fetchSOPs(orgId: number, userKey: string): Promise<SOPListItem[]> {
+export async function fetchSOPs(orgId: number, userKey: string, includeDrafts = false): Promise<SOPListItem[]> {
   const params = new URLSearchParams({ user_key: userKey });
+  if (includeDrafts) params.set('include_drafts', 'true');
   const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/sops?${params}`);
   if (!res.ok) throw new Error('Не удалось загрузить список регламентов');
   return res.json();
+}
+
+export async function toggleSOPStatus(sopId: number, userKey: string, status: 'draft' | 'published'): Promise<void> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/sops/${sopId}?${params}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error('Не удалось изменить статус');
 }
 
 export async function fetchSOP(sopId: number): Promise<SOPWithSteps> {

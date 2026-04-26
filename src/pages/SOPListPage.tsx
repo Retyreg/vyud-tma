@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
-import { fetchSOPs, fetchMyAssignments } from '../api/sop';
+import { fetchSOPs, fetchMyAssignments, toggleSOPStatus } from '../api/sop';
 import type { SOPListItem, MyAssignment } from '../api/sop';
 import { Loader2 } from 'lucide-react';
 
@@ -17,6 +17,7 @@ const SOPListPage: FC = () => {
   const [sops, setSops] = useState<SOPListItem[]>([]);
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [assignments, setAssignments] = useState<MyAssignment[]>([]);
+  const [toggling, setToggling] = useState<number | null>(null);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -46,7 +47,7 @@ const SOPListPage: FC = () => {
         if (!currentOrg) { setLoading(false); return; }
 
         const [sopList, myAssignments] = await Promise.all([
-          fetchSOPs(currentOrg.org_id, userKey),
+          fetchSOPs(currentOrg.org_id, userKey, currentOrg.is_manager),
           fetchMyAssignments(currentOrg.org_id, userKey),
         ]);
         setSops(sopList);
@@ -146,27 +147,37 @@ const SOPListPage: FC = () => {
       ) : (
         sops.map((sop) => {
           const assignment = assignments.find((a) => a.sop_id === sop.id);
+          const isDraft = sop.status === 'draft';
           return (
-            <button
+            <div
               key={sop.id}
-              onClick={() => navigate(`/sop/${sop.id}`)}
               style={{
                 width: '100%', textAlign: 'left',
                 padding: '14px 16px', borderRadius: 14,
-                border: assignment?.overdue
+                border: isDraft
+                  ? '1px dashed var(--border)'
+                  : assignment?.overdue
                   ? '1px solid #fca5a5'
                   : assignment
                   ? '1px solid #fde68a'
                   : '1px solid var(--border)',
-                background: 'var(--tg-theme-secondary-bg-color, var(--card))',
-                cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 12,
-                minHeight: 44,
+                background: isDraft ? 'var(--tg-theme-secondary-bg-color, var(--card))' : 'var(--tg-theme-secondary-bg-color, var(--card))',
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                opacity: isDraft ? 0.85 : 1,
               }}
             >
-              <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>
-                {sop.is_completed ? '✅' : '📋'}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <button
+                onClick={() => !isDraft && navigate(`/sop/${sop.id}`)}
+                style={{ display: 'contents', cursor: isDraft ? 'default' : 'pointer' }}
+              >
+                <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>
+                  {isDraft ? '📝' : sop.is_completed ? '✅' : '📋'}
+                </span>
+              </button>
+              <div
+                style={{ flex: 1, minWidth: 0, cursor: isDraft ? 'default' : 'pointer' }}
+                onClick={() => !isDraft && navigate(`/sop/${sop.id}`)}
+              >
                 <div style={{
                   fontWeight: 700, fontSize: 15, color: 'var(--text)',
                   marginBottom: 4, lineHeight: 1.3,
@@ -217,7 +228,37 @@ const SOPListPage: FC = () => {
                   )}
                 </div>
               </div>
-            </button>
+
+              {/* Manager: publish/unpublish toggle */}
+              {org?.is_manager && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!userKey || toggling === sop.id) return;
+                    setToggling(sop.id);
+                    const newStatus = isDraft ? 'published' : 'draft';
+                    try {
+                      await toggleSOPStatus(sop.id, userKey, newStatus);
+                      setSops((prev) => prev.map((s) => s.id === sop.id ? { ...s, status: newStatus } : s));
+                    } catch { /* ignore */ } finally {
+                      setToggling(null);
+                    }
+                  }}
+                  style={{
+                    flexShrink: 0, alignSelf: 'center',
+                    padding: '6px 10px', borderRadius: 8,
+                    border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                    background: isDraft ? '#dcfce7' : '#fef9c3',
+                    color: isDraft ? '#16a34a' : '#854d0e',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  {toggling === sop.id
+                    ? <Loader2 size={11} style={{ animation: 'spin 0.8s linear infinite' }} />
+                    : isDraft ? '▶ Опубликовать' : '⏸ В черновик'}
+                </button>
+              )}
+            </div>
           );
         })
       )}
