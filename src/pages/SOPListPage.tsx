@@ -139,6 +139,55 @@ const SOPListPage: FC = () => {
         )}
       </div>
 
+      {/* Assigned to employee — prominent section */}
+      {!org.is_manager && (() => {
+        const urgentAssignments = assignments.filter((a) => !a.completed);
+        if (urgentAssignments.length === 0) return null;
+        return (
+          <div style={{
+            padding: '12px 14px', borderRadius: 14,
+            background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+            border: '1px solid #93c5fd',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#1d4ed8', marginBottom: 8 }}>
+              📌 Назначено вам ({urgentAssignments.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {urgentAssignments.map((a) => {
+                const sop = sops.find((s) => s.id === a.sop_id);
+                if (!sop) return null;
+                const dl = new Date(a.deadline);
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const daysLeft = Math.ceil((dl.getTime() - today.getTime()) / 86400000);
+                return (
+                  <button
+                    key={a.sop_id}
+                    onClick={() => navigate(`/sop/${a.sop_id}`)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 10px', borderRadius: 10,
+                      background: 'white', border: '1px solid #bfdbfe',
+                      cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>{a.overdue ? '⚠️' : '📋'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}>
+                        {sop.title}
+                      </div>
+                      <div style={{ fontSize: 11, color: a.overdue ? '#dc2626' : daysLeft <= 1 ? '#b45309' : '#3b82f6' }}>
+                        {a.overdue ? 'Просрочен' : daysLeft === 0 ? 'Сегодня' : daysLeft === 1 ? 'Завтра' : `до ${dl.toLocaleDateString('ru', { day: 'numeric', month: 'short' })}`}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 14, color: '#3b82f6' }}>→</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Search */}
       <input
         type="text"
