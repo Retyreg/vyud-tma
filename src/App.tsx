@@ -16,6 +16,7 @@ import TemplatesPage from './pages/TemplatesPage';
 import SOPEditPage from './pages/SOPEditPage';
 import OnboardingPage from './pages/OnboardingPage';
 import SOPUploadPage from './pages/SOPUploadPage';
+import MyProgressPage from './pages/MyProgressPage';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
@@ -36,6 +37,7 @@ function App() {
             <Route path="/help" element={<HelpPage />} />
             <Route path="/dashboard" element={<ManagerDashboard />} />
             <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/my-progress" element={<MyProgressPage />} />
           </Route>
           <Route path="/test/:id" element={<TestPlayerPage />} />
           <Route path="/sop/:id" element={<SOPPlayerPage />} />

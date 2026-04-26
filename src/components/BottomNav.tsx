@@ -3,15 +3,21 @@ import type { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { LmsOrg } from '../api/lms';
 
-const BASE_TABS = [
+const EMPLOYEE_TABS = [
   { path: '/', label: 'Регламенты', icon: '📋', exact: true },
+  { path: '/my-progress', label: 'Прогресс', icon: '🎯', exact: false },
   { path: '/leaderboard', label: 'Топ', icon: '🏆', exact: false },
-  { path: '/tests', label: 'Тесты', icon: '📚', exact: false },
-  { path: '/graph', label: 'Граф', icon: '🧠', exact: false },
+  { path: '/templates', label: 'Шаблоны', icon: '📄', exact: false },
   { path: '/profile', label: 'Профиль', icon: '👤', exact: false },
 ];
 
-const DASHBOARD_TAB = { path: '/dashboard', label: 'Дашборд', icon: '📊', exact: false };
+const MANAGER_TABS = [
+  { path: '/', label: 'Регламенты', icon: '📋', exact: true },
+  { path: '/dashboard', label: 'Дашборд', icon: '📊', exact: false },
+  { path: '/templates', label: 'Шаблоны', icon: '📄', exact: false },
+  { path: '/my-progress', label: 'Прогресс', icon: '🎯', exact: false },
+  { path: '/profile', label: 'Профиль', icon: '👤', exact: false },
+];
 
 const BottomNav: FC = () => {
   const navigate = useNavigate();
@@ -28,7 +34,7 @@ const BottomNav: FC = () => {
     }
   }, [pathname]);
 
-  const TABS = isManager ? [...BASE_TABS, DASHBOARD_TAB] : BASE_TABS;
+  const TABS = isManager ? MANAGER_TABS : EMPLOYEE_TABS;
 
   const isActive = (tab: (typeof BASE_TABS)[number]) =>
     tab.exact ? pathname === tab.path : pathname.startsWith(tab.path);

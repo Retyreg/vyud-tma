@@ -143,6 +143,25 @@ export async function fetchAssignments(orgId: number, managerKey: string): Promi
   return res.json();
 }
 
+export interface MyProgressItem {
+  sop_id: number;
+  title: string;
+  steps_count: number;
+  completed: boolean;
+  score: number | null;
+  max_score: number | null;
+  time_spent_sec: number | null;
+  completed_at: string | null;
+  cert_token: string | null;
+}
+
+export async function fetchMyProgress(orgId: number, userKey: string): Promise<{ org_name: string; items: MyProgressItem[] }> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/my-progress?${params}`);
+  if (!res.ok) throw new Error('Не удалось загрузить прогресс');
+  return res.json();
+}
+
 export async function fetchMyAssignments(orgId: number, userKey: string): Promise<MyAssignment[]> {
   const params = new URLSearchParams({ user_key: userKey });
   const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/my-assignments?${params}`);
