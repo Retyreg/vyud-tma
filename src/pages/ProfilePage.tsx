@@ -113,28 +113,55 @@ const ProfilePage: FC = () => {
             </div>
           </div>
           {org.is_manager && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                flex: 1, padding: '8px 12px', borderRadius: 8, background: 'var(--primary-light)',
-                border: '1px solid var(--border)', fontFamily: 'monospace', fontSize: 14,
-                color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {org.invite_code}
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 8, background: 'var(--primary-light)',
+                  border: '1px solid var(--border)', fontFamily: 'monospace', fontSize: 14,
+                  color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {org.invite_code}
+                </div>
+                <button
+                  onClick={handleCopyInvite}
+                  style={{ padding: '8px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: copied ? '#16a34a' : 'var(--text-secondary)' }}
+                >
+                  <Copy size={16} />
+                </button>
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  style={{ padding: '8px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                >
+                  <RefreshCw size={16} style={regenerating ? { animation: 'spin 0.8s linear infinite' } : undefined} />
+                </button>
               </div>
-              <button
-                onClick={handleCopyInvite}
-                style={{ padding: '8px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: copied ? '#16a34a' : 'var(--text-secondary)' }}
-              >
-                <Copy size={16} />
-              </button>
-              <button
-                onClick={handleRegenerate}
-                disabled={regenerating}
-                style={{ padding: '8px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-              >
-                <RefreshCw size={16} style={regenerating ? { animation: 'spin 0.8s linear infinite' } : undefined} />
-              </button>
-            </div>
+
+              {/* Free plan upsell */}
+              <div style={{
+                padding: '12px 14px', borderRadius: 10,
+                background: 'linear-gradient(135deg, #fef9c3 0%, #fde68a 40%, #fef3c7 100%)',
+                border: '1px solid #fbbf24',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span style={{ fontSize: 20 }}>🚀</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e' }}>Бесплатный план</div>
+                  <div style={{ fontSize: 11, color: '#a16207', marginTop: 1 }}>1 СОП · 5 сотрудников</div>
+                </div>
+                <a
+                  href="https://vyud.online/pricing"
+                  onClick={(e) => { e.preventDefault(); (window as any).Telegram?.WebApp?.openLink('https://vyud.online/pricing'); }}
+                  style={{
+                    flexShrink: 0, padding: '6px 12px', borderRadius: 8,
+                    background: '#f59e0b', color: 'white',
+                    fontWeight: 700, fontSize: 12, textDecoration: 'none',
+                  }}
+                >
+                  Улучшить
+                </a>
+              </div>
+            </>
           )}
         </div>
       )}
