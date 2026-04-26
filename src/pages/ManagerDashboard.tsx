@@ -6,7 +6,7 @@ import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
 import { fetchOrgProgress, createAssignment, nudgeEmployee } from '../api/sop';
 import type { OrgProgress } from '../api/sop';
-import { Loader2, Copy, CheckCheck, Pencil } from 'lucide-react';
+import { Loader2, Copy, CheckCheck, Pencil, Download } from 'lucide-react';
 
 const ManagerDashboard: FC = () => {
   const { user } = useAuthContext();
@@ -168,17 +168,33 @@ const ManagerDashboard: FC = () => {
           <h1 style={{ fontSize: 20, margin: '0 0 4px', fontWeight: 700 }}>Дашборд</h1>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 13 }}>{org.org_name}</p>
         </div>
-        <button
-          onClick={() => navigate('/upload-sop')}
-          style={{
-            flexShrink: 0, padding: '8px 14px', borderRadius: 10,
-            fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer',
-            background: 'var(--primary)', color: 'white',
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >
-          📄 PDF
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => navigate('/upload-sop')}
+            style={{
+              flexShrink: 0, padding: '8px 12px', borderRadius: 10,
+              fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer',
+              background: 'var(--primary)', color: 'white',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            📄 PDF
+          </button>
+          {org && userKey && (
+            <a
+              href={`${import.meta.env.VITE_LMS_URL || 'http://38.180.229.254:8000'}/api/orgs/${org.org_id}/sop-progress/export-csv?user_key=${userKey}`}
+              download
+              style={{
+                flexShrink: 0, padding: '8px 10px', borderRadius: 10,
+                fontWeight: 700, fontSize: 13, border: '1px solid var(--border)', cursor: 'pointer',
+                background: 'var(--tg-theme-secondary-bg-color, var(--card))', color: 'var(--text)',
+                display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none',
+              }}
+            >
+              <Download size={14} />
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Invite card */}
