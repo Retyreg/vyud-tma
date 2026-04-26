@@ -187,6 +187,17 @@ const ManagerDashboard: FC = () => {
             📄 PDF
           </button>
           <button
+            onClick={() => navigate('/assignments')}
+            style={{
+              flexShrink: 0, padding: '8px 10px', borderRadius: 10,
+              fontWeight: 700, fontSize: 13, border: '1px solid var(--border)', cursor: 'pointer',
+              background: 'var(--tg-theme-secondary-bg-color, var(--card))', color: 'var(--text)',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            📅
+          </button>
+          <button
             onClick={() => navigate('/members')}
             style={{
               flexShrink: 0, padding: '8px 10px', borderRadius: 10,

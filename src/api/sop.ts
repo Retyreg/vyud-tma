@@ -208,6 +208,12 @@ export async function nudgeEmployee(
   }
 }
 
+export async function deleteAssignment(orgId: number, assignmentId: number, userKey: string): Promise<void> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/assignments/${assignmentId}?${params}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Не удалось удалить назначение');
+}
+
 export async function fetchMyAssignments(orgId: number, userKey: string): Promise<MyAssignment[]> {
   const params = new URLSearchParams({ user_key: userKey });
   const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/my-assignments?${params}`);
