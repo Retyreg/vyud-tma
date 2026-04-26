@@ -7,6 +7,15 @@ import type { MyProgressItem } from '../api/sop';
 import type { LmsOrg } from '../api/lms';
 import { Loader2 } from 'lucide-react';
 
+const LMS_URL = import.meta.env.VITE_LMS_URL || 'http://38.180.229.254:8000';
+
+interface StreakInfo {
+  current_streak: number;
+  longest_streak: number;
+  total_days_active: number;
+  badge: string | null;
+}
+
 const MyProgressPage: FC = () => {
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -15,6 +24,7 @@ const MyProgressPage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<MyProgressItem[]>([]);
   const [orgName, setOrgName] = useState('');
+  const [streak, setStreak] = useState<StreakInfo | null>(null);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -27,8 +37,15 @@ const MyProgressPage: FC = () => {
 
   useEffect(() => {
     if (!userKey || !org) { setLoading(false); return; }
-    fetchMyProgress(org.org_id, userKey)
-      .then((data) => { setOrgName(data.org_name); setItems(data.items); })
+    Promise.all([
+      fetchMyProgress(org.org_id, userKey),
+      fetch(`${LMS_URL}/streaks/${encodeURIComponent(userKey)}`).then((r) => r.ok ? r.json() : null).catch(() => null),
+    ])
+      .then(([progress, streakData]) => {
+        setOrgName(progress.org_name);
+        setItems(progress.items);
+        if (streakData) setStreak(streakData);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [userKey]);
@@ -92,6 +109,27 @@ const MyProgressPage: FC = () => {
           </div>
         )}
       </div>
+
+      {/* Streak banner */}
+      {streak && streak.current_streak > 0 && (
+        <div style={{
+          borderRadius: 14, padding: '12px 16px',
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+          border: '1px solid #fbbf24',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <span style={{ fontSize: 28 }}>🔥</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: '#92400e' }}>
+              {streak.current_streak} {streak.current_streak === 1 ? 'день' : streak.current_streak < 5 ? 'дня' : 'дней'} подряд
+            </div>
+            <div style={{ fontSize: 12, color: '#a16207', marginTop: 2 }}>
+              Рекорд: {streak.longest_streak} · Всего дней: {streak.total_days_active}
+              {streak.badge ? ` · ${streak.badge}` : ''}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       {total > 0 && (
