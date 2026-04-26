@@ -16,6 +16,7 @@ const ManagerDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [progress, setProgress] = useState<OrgProgress | null>(null);
+  const [roi, setRoi] = useState<{ active_members: number; total_members: number; avg_completion_rate: number; avg_streak: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [nudging, setNudging] = useState<string | null>(null); // `${empKey}_${sopId}`
 
@@ -51,8 +52,13 @@ const ManagerDashboard: FC = () => {
         setOrg(currentOrg);
         if (!currentOrg || !currentOrg.is_manager) { setLoading(false); return; }
 
-        const data = await fetchOrgProgress(currentOrg.org_id, userKey);
+        const [data, roiData] = await Promise.all([
+          fetchOrgProgress(currentOrg.org_id, userKey),
+          fetch(`${import.meta.env.VITE_LMS_URL || 'http://38.180.229.254:8000'}/api/orgs/${currentOrg.org_id}/roi?user_key=${encodeURIComponent(userKey)}`)
+            .then((r) => r.ok ? r.json() : null).catch(() => null),
+        ]);
         setProgress(data);
+        if (roiData) setRoi(roiData);
       } catch (e: any) {
         setError(e.message || 'Ошибка загрузки');
       } finally {
@@ -253,6 +259,27 @@ const ManagerDashboard: FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ROI stats row */}
+      {roi && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {[
+            { label: 'Активных', value: `${roi.active_members}/${roi.total_members}`, icon: '👥' },
+            { label: 'Выполнено', value: `${Math.round(roi.avg_completion_rate)}%`, icon: '✅' },
+            { label: 'Серия', value: `${roi.avg_streak.toFixed(1)}д`, icon: '🔥' },
+          ].map((s) => (
+            <div key={s.label} style={{
+              padding: '12px 8px', borderRadius: 12, textAlign: 'center',
+              background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+              border: '1px solid var(--border)',
+            }}>
+              <div style={{ fontSize: 20 }}>{s.icon}</div>
+              <div style={{ fontWeight: 800, fontSize: 18, margin: '2px 0' }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Matrix */}
       {sops.length === 0 || employees.length === 0 ? (
