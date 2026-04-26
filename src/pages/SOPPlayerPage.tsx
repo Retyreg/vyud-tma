@@ -409,6 +409,22 @@ const SOPPlayerPage: FC = () => {
               </button>
             ))}
           </div>
+
+          {/* Explanation shown after answering */}
+          {isAnswered && question.explanation && (
+            <div style={{
+              padding: '14px 16px', borderRadius: 12,
+              background: selectedAnswer === letterToIndex(question.correct_answer) ? '#f0fdf4' : '#fef9c3',
+              border: `1px solid ${selectedAnswer === letterToIndex(question.correct_answer) ? '#86efac' : '#fde68a'}`,
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+                {selectedAnswer === letterToIndex(question.correct_answer) ? '✅ Верно!' : '💡 Разбор'}
+              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: 'var(--text)' }}>
+                {question.explanation}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
