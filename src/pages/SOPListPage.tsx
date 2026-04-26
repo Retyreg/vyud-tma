@@ -18,6 +18,7 @@ const SOPListPage: FC = () => {
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [assignments, setAssignments] = useState<MyAssignment[]>([]);
   const [toggling, setToggling] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -137,15 +138,37 @@ const SOPListPage: FC = () => {
         )}
       </div>
 
-      {sops.length === 0 ? (
-        <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 48 }}>📋</span>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0 }}>
-            В вашей организации пока нет регламентов
-          </p>
-        </div>
-      ) : (
-        sops.map((sop) => {
+      {/* Search */}
+      <input
+        type="text"
+        placeholder="Поиск по регламентам..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{
+          width: '100%', padding: '10px 14px', borderRadius: 10,
+          border: '1px solid var(--border)', background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+          color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+        }}
+      />
+
+      {(() => {
+        const q = searchQuery.trim().toLowerCase();
+        const filtered = q
+          ? sops.filter((s) =>
+              s.title.toLowerCase().includes(q) ||
+              (s.description?.toLowerCase().includes(q) ?? false),
+            )
+          : sops;
+        return filtered.length === 0 ? (
+          <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 48 }}>📋</span>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0 }}>
+              {q ? 'Ничего не найдено' : 'В вашей организации пока нет регламентов'}
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filtered.map((sop) => {
           const assignment = assignments.find((a) => a.sop_id === sop.id);
           const isDraft = sop.status === 'draft';
           return (
@@ -260,8 +283,10 @@ const SOPListPage: FC = () => {
               )}
             </div>
           );
-        })
-      )}
+        })}
+          </div>
+        );
+      })()}
     </div>
   );
 };
