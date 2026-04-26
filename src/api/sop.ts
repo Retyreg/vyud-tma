@@ -154,6 +154,23 @@ export async function fetchAssignments(orgId: number, managerKey: string): Promi
   return res.json();
 }
 
+export interface LeaderboardEntry {
+  user_key: string;
+  display_name: string | null;
+  is_me: boolean;
+  completed: number;
+  total: number;
+  avg_score_pct: number | null;
+  rank: number;
+}
+
+export async function fetchOrgLeaderboard(orgId: number, userKey: string): Promise<{ org_name: string; total_sops: number; entries: LeaderboardEntry[] }> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/leaderboard?${params}`);
+  if (!res.ok) throw new Error('Не удалось загрузить лидерборд');
+  return res.json();
+}
+
 export interface MyProgressItem {
   sop_id: number;
   title: string;

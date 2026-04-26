@@ -6,7 +6,7 @@ import type { LmsOrg } from '../api/lms';
 const EMPLOYEE_TABS = [
   { path: '/', label: 'Регламенты', icon: '📋', exact: true },
   { path: '/my-progress', label: 'Прогресс', icon: '🎯', exact: false },
-  { path: '/leaderboard', label: 'Топ', icon: '🏆', exact: false },
+  { path: '/org-leaderboard', label: 'Топ', icon: '🏆', exact: false },
   { path: '/templates', label: 'Шаблоны', icon: '📄', exact: false },
   { path: '/profile', label: 'Профиль', icon: '👤', exact: false },
 ];
