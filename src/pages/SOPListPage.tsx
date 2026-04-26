@@ -19,6 +19,7 @@ const SOPListPage: FC = () => {
   const [assignments, setAssignments] = useState<MyAssignment[]>([]);
   const [toggling, setToggling] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -151,19 +152,41 @@ const SOPListPage: FC = () => {
         }}
       />
 
+      {/* Status tabs — managers only */}
+      {org.is_manager && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['all', 'published', 'draft'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              style={{
+                padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                border: 'none', cursor: 'pointer',
+                background: statusFilter === f ? 'var(--primary)' : 'var(--tg-theme-secondary-bg-color, var(--card))',
+                color: statusFilter === f ? 'white' : 'var(--text-secondary)',
+                border: statusFilter === f ? 'none' : '1px solid var(--border)',
+              } as React.CSSProperties}
+            >
+              {f === 'all' ? 'Все' : f === 'published' ? 'Опубликованы' : 'Черновики'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {(() => {
         const q = searchQuery.trim().toLowerCase();
-        const filtered = q
-          ? sops.filter((s) =>
-              s.title.toLowerCase().includes(q) ||
-              (s.description?.toLowerCase().includes(q) ?? false),
-            )
-          : sops;
+        const filtered = sops
+          .filter((s) => statusFilter === 'all' || s.status === statusFilter)
+          .filter((s) =>
+            !q ||
+            s.title.toLowerCase().includes(q) ||
+            (s.description?.toLowerCase().includes(q) ?? false),
+          );
         return filtered.length === 0 ? (
           <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 48 }}>📋</span>
             <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0 }}>
-              {q ? 'Ничего не найдено' : 'В вашей организации пока нет регламентов'}
+              {q || statusFilter !== 'all' ? 'Ничего не найдено' : 'В вашей организации пока нет регламентов'}
             </p>
           </div>
         ) : (
