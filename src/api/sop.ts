@@ -173,6 +173,24 @@ export async function fetchMyProgress(orgId: number, userKey: string): Promise<{
   return res.json();
 }
 
+export async function nudgeEmployee(
+  orgId: number,
+  managerKey: string,
+  employeeKey: string,
+  sopId: number,
+): Promise<void> {
+  const params = new URLSearchParams({
+    user_key: managerKey,
+    employee_key: employeeKey,
+    sop_id: String(sopId),
+  });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/nudge?${params}`, { method: 'POST' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.detail || 'Ошибка отправки напоминания');
+  }
+}
+
 export async function fetchMyAssignments(orgId: number, userKey: string): Promise<MyAssignment[]> {
   const params = new URLSearchParams({ user_key: userKey });
   const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/my-assignments?${params}`);

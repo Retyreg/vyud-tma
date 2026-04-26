@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { getUserOrgs } from '../api/lms';
 import type { LmsOrg } from '../api/lms';
-import { fetchOrgProgress, createAssignment } from '../api/sop';
+import { fetchOrgProgress, createAssignment, nudgeEmployee } from '../api/sop';
 import type { OrgProgress } from '../api/sop';
 import { Loader2, Copy, CheckCheck, Pencil } from 'lucide-react';
 
@@ -17,6 +17,7 @@ const ManagerDashboard: FC = () => {
   const [org, setOrg] = useState<LmsOrg | null>(null);
   const [progress, setProgress] = useState<OrgProgress | null>(null);
   const [copied, setCopied] = useState(false);
+  const [nudging, setNudging] = useState<string | null>(null); // `${empKey}_${sopId}`
 
   // Assign modal state
   const [assignModal, setAssignModal] = useState<{ sopId: number; sopTitle: string } | null>(null);
@@ -325,7 +326,31 @@ const ManagerDashboard: FC = () => {
                             ✅ {entry.score}/{entry.max_score}
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-secondary)', fontSize: 16 }}>⏳</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: 16 }}>⏳</span>
+                            {org && userKey && (
+                              <button
+                                onClick={async () => {
+                                  const key = `${emp.user_key}_${sop.id}`;
+                                  setNudging(key);
+                                  try {
+                                    await nudgeEmployee(org.org_id, userKey, emp.user_key, sop.id);
+                                  } catch { /* ignore */ } finally {
+                                    setNudging(null);
+                                  }
+                                }}
+                                disabled={nudging === `${emp.user_key}_${sop.id}`}
+                                style={{
+                                  fontSize: 9, padding: '2px 6px', borderRadius: 6,
+                                  border: 'none', cursor: 'pointer', fontWeight: 600,
+                                  background: '#fef9c3', color: '#854d0e',
+                                  opacity: nudging === `${emp.user_key}_${sop.id}` ? 0.5 : 1,
+                                }}
+                              >
+                                {nudging === `${emp.user_key}_${sop.id}` ? '...' : '👋 push'}
+                              </button>
+                            )}
+                          </div>
                         )}
                       </td>
                     );
