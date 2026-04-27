@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { LmsOrg } from '../api/lms';
+import { useAuthContext } from '../contexts/AuthContext';
+import { fetchMyAssignments } from '../api/sop';
 
 const EMPLOYEE_TABS = [
   { path: '/', label: 'Регламенты', icon: '📋', exact: true },
@@ -22,21 +24,29 @@ const MANAGER_TABS = [
 const BottomNav: FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user } = useAuthContext();
+  const [pendingCount, setPendingCount] = useState(0);
 
-  const isManager = useMemo(() => {
+  const org = useMemo<LmsOrg | null>(() => {
     try {
       const cached = localStorage.getItem('vyud_org');
-      if (!cached) return false;
-      const org: LmsOrg = JSON.parse(cached);
-      return Boolean(org.is_manager);
-    } catch {
-      return false;
-    }
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
   }, [pathname]);
+
+  const isManager = Boolean(org?.is_manager);
+  const userKey = user?.telegram_id ? String(user.telegram_id) : null;
+
+  useEffect(() => {
+    if (!userKey || !org || isManager) { setPendingCount(0); return; }
+    fetchMyAssignments(org.org_id, userKey)
+      .then((arr) => setPendingCount(arr.filter((a) => !a.completed).length))
+      .catch(() => setPendingCount(0));
+  }, [userKey, isManager, org?.org_id, pathname]);
 
   const TABS = isManager ? MANAGER_TABS : EMPLOYEE_TABS;
 
-  const isActive = (tab: (typeof BASE_TABS)[number]) =>
+  const isActive = (tab: (typeof EMPLOYEE_TABS)[number]) =>
     tab.exact ? pathname === tab.path : pathname.startsWith(tab.path);
 
   return (
@@ -49,6 +59,7 @@ const BottomNav: FC = () => {
     }}>
       {TABS.map((tab) => {
         const active = isActive(tab);
+        const showBadge = !isManager && tab.path === '/' && pendingCount > 0;
         return (
           <button
             key={tab.path}
@@ -58,9 +69,24 @@ const BottomNav: FC = () => {
               alignItems: 'center', justifyContent: 'center', gap: '2px',
               background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
               color: active ? 'var(--primary)' : 'var(--text-secondary)',
+              position: 'relative',
             }}
           >
-            <span style={{ fontSize: '20px', lineHeight: 1 }}>{tab.icon}</span>
+            <span style={{ fontSize: '20px', lineHeight: 1, position: 'relative' }}>
+              {tab.icon}
+              {showBadge && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -10,
+                  minWidth: 16, height: 16, padding: '0 4px',
+                  borderRadius: 8, background: '#dc2626',
+                  color: 'white', fontSize: 10, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  lineHeight: 1,
+                }}>
+                  {pendingCount > 9 ? '9+' : pendingCount}
+                </span>
+              )}
+            </span>
             <span style={{ fontSize: '10px', fontWeight: active ? 700 : 400 }}>{tab.label}</span>
           </button>
         );
