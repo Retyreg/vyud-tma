@@ -406,7 +406,12 @@ const ManagerDashboard: FC = () => {
                       : 'var(--tg-theme-secondary-bg-color, var(--card))',
                     maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    {emp.display_name ?? emp.user_key}
+                    <button
+                      onClick={() => navigate(`/employee/${encodeURIComponent(emp.user_key)}`)}
+                      style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary)', fontWeight: 600, fontSize: 13, cursor: 'pointer', textDecoration: 'underline', textAlign: 'left' }}
+                    >
+                      {emp.display_name ?? emp.user_key}
+                    </button>
                   </td>
                   {sops.map((sop) => {
                     const entry = emp.sops.find((s) => s.sop_id === sop.id);
