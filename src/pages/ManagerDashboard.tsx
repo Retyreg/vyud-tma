@@ -293,13 +293,37 @@ const ManagerDashboard: FC = () => {
       )}
 
       {/* Matrix */}
-      {sops.length === 0 || employees.length === 0 ? (
-        <div style={{ padding: '32px 0', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
-            {sops.length === 0
-              ? 'Нет регламентов для отображения'
-              : 'Никто ещё не проходил регламенты'}
+      {sops.length === 0 ? (
+        <div style={{ padding: '24px 20px', borderRadius: 14, border: '1px dashed var(--border)', background: 'var(--tg-theme-secondary-bg-color, var(--card))', textAlign: 'center' }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>📋</div>
+          <h3 style={{ fontSize: 15, margin: '0 0 4px', fontWeight: 700 }}>Добавьте первый регламент</h3>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+            Загрузите PDF или выберите готовый шаблон
           </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => navigate('/upload-sop')}
+              style={{
+                padding: '10px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: 'var(--primary)', color: 'white', fontWeight: 700, fontSize: 13,
+              }}
+            >
+              📄 Загрузить PDF
+            </button>
+            <button
+              onClick={() => navigate('/templates')}
+              style={{
+                padding: '10px 16px', borderRadius: 10, border: '1px solid var(--border)', cursor: 'pointer',
+                background: 'var(--tg-theme-secondary-bg-color, var(--card))', color: 'var(--text)', fontWeight: 700, fontSize: 13,
+              }}
+            >
+              📚 Шаблоны
+            </button>
+          </div>
+        </div>
+      ) : employees.length === 0 ? (
+        <div style={{ padding: '32px 0', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>Никто ещё не проходил регламенты</p>
         </div>
       ) : (
         <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid var(--border)' }}>
