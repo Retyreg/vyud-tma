@@ -20,6 +20,7 @@ const SOPListPage: FC = () => {
   const [toggling, setToggling] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [sortMode, setSortMode] = useState<'default' | 'pending' | 'alpha'>('default');
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : null;
 
@@ -222,15 +223,43 @@ const SOPListPage: FC = () => {
         </div>
       )}
 
+      {/* Sort selector — for everyone, but compact */}
+      <div style={{ display: 'flex', gap: 6, fontSize: 12 }}>
+        {(['default', 'pending', 'alpha'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setSortMode(m)}
+            style={{
+              padding: '5px 10px', borderRadius: 16, fontSize: 11, fontWeight: 600,
+              cursor: 'pointer',
+              background: sortMode === m ? 'var(--primary-light)' : 'transparent',
+              color: sortMode === m ? 'var(--primary)' : 'var(--text-secondary)',
+              border: sortMode === m ? '1px solid var(--primary)' : '1px solid var(--border)',
+            }}
+          >
+            {m === 'default' ? '📌 По умолч.' : m === 'pending' ? '⏳ Непройденные' : '🔤 А-Я'}
+          </button>
+        ))}
+      </div>
+
       {(() => {
         const q = searchQuery.trim().toLowerCase();
-        const filtered = sops
+        let filtered = sops
           .filter((s) => statusFilter === 'all' || s.status === statusFilter)
           .filter((s) =>
             !q ||
             s.title.toLowerCase().includes(q) ||
             (s.description?.toLowerCase().includes(q) ?? false),
           );
+
+        if (sortMode === 'pending') {
+          filtered = [...filtered].sort((a, b) => {
+            if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+            return 0;
+          });
+        } else if (sortMode === 'alpha') {
+          filtered = [...filtered].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+        }
         return filtered.length === 0 ? (
           <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 48 }}>📋</span>
