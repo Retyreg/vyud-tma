@@ -24,6 +24,8 @@ const TemplatesPage: FC = () => {
   const [cloning, setCloning] = useState<number | null>(null);
   const [cloned, setCloned] = useState<Set<number>>(new Set());
   const [showLimitSheet, setShowLimitSheet] = useState(false);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : '';
 
@@ -58,8 +60,16 @@ const TemplatesPage: FC = () => {
     }
   };
 
-  // Group by category
-  const grouped = templates.reduce<Record<string, SOPTemplateItem[]>>((acc, t) => {
+  const allCategories = Array.from(new Set(templates.map((t) => t.category)));
+
+  // Filter + group
+  const q = search.trim().toLowerCase();
+  const filteredTemplates = templates.filter((t) => {
+    if (activeCategory && t.category !== activeCategory) return false;
+    if (q && !t.title.toLowerCase().includes(q) && !(t.description?.toLowerCase().includes(q) ?? false)) return false;
+    return true;
+  });
+  const grouped = filteredTemplates.reduce<Record<string, SOPTemplateItem[]>>((acc, t) => {
     (acc[t.category] ??= []).push(t);
     return acc;
   }, {});
@@ -103,11 +113,64 @@ const TemplatesPage: FC = () => {
         </div>
       </div>
 
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Поиск по шаблонам..."
+        style={{
+          width: '100%', padding: '10px 14px', borderRadius: 10,
+          border: '1px solid var(--border)', background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+          color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+        }}
+      />
+
+      {/* Category chips */}
+      {allCategories.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setActiveCategory(null)}
+            style={{
+              padding: '5px 12px', borderRadius: 16, fontSize: 12, fontWeight: 600,
+              cursor: 'pointer',
+              background: !activeCategory ? 'var(--primary)' : 'transparent',
+              color: !activeCategory ? 'white' : 'var(--text-secondary)',
+              border: !activeCategory ? 'none' : '1px solid var(--border)',
+            }}
+          >
+            Все
+          </button>
+          {allCategories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCategory(activeCategory === c ? null : c)}
+              style={{
+                padding: '5px 12px', borderRadius: 16, fontSize: 12, fontWeight: 600,
+                cursor: 'pointer',
+                background: activeCategory === c ? 'var(--primary)' : 'transparent',
+                color: activeCategory === c ? 'white' : 'var(--text-secondary)',
+                border: activeCategory === c ? 'none' : '1px solid var(--border)',
+              }}
+            >
+              {CATEGORY_LABELS[c] ?? c}
+            </button>
+          ))}
+        </div>
+      )}
+
       {!org?.is_manager && (
         <div style={{ padding: '12px 16px', borderRadius: 12, background: '#fef9c3', border: '1px solid #fde68a' }}>
           <p style={{ margin: 0, fontSize: 13, color: '#854d0e' }}>
             Добавлять шаблоны в организацию могут только менеджеры
           </p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {filteredTemplates.length === 0 && (
+        <div style={{ padding: '40px 0', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Ничего не найдено</p>
         </div>
       )}
 
