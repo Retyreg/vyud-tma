@@ -180,9 +180,27 @@ const SOPPlayerPage: FC = () => {
       <div style={{
         minHeight: '100vh', background: 'var(--tg-theme-bg-color, var(--bg))',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', padding: '24px 16px', gap: 24,
+        justifyContent: 'center', padding: '24px 16px', gap: 24, position: 'relative', overflow: 'hidden',
       }}>
-        <span style={{ fontSize: 72 }}>🎉</span>
+        {/* Confetti */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          {Array.from({ length: 14 }).map((_, i) => (
+            <span
+              key={i}
+              style={{
+                position: 'absolute',
+                top: '-10%',
+                left: `${(i * 7.3) % 100}%`,
+                fontSize: 18 + (i % 3) * 6,
+                animation: `confettiFall ${2.5 + (i % 4) * 0.4}s ease-in ${(i * 0.13)}s forwards`,
+                opacity: 0,
+              }}
+            >
+              {['🎉', '✨', '🎊', '⭐', '💫'][i % 5]}
+            </span>
+          ))}
+        </div>
+        <span style={{ fontSize: 72, position: 'relative', zIndex: 1 }}>🎉</span>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ fontSize: 22, margin: '0 0 8px', fontWeight: 700 }}>Регламент пройден!</h1>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>{sop.title}</p>
