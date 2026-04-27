@@ -164,6 +164,24 @@ export interface LeaderboardEntry {
   rank: number;
 }
 
+export interface SOPCompletionDetail {
+  user_key: string;
+  display_name: string | null;
+  completed: boolean;
+  score: number | null;
+  max_score: number | null;
+  score_pct: number | null;
+  time_spent_sec: number | null;
+  completed_at: string | null;
+}
+
+export async function fetchSOPCompletions(orgId: number, sopId: number, userKey: string): Promise<{ sop_title: string; completions: SOPCompletionDetail[] }> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/sops/${sopId}/completions?${params}`);
+  if (!res.ok) throw new Error('Не удалось загрузить детали');
+  return res.json();
+}
+
 export async function fetchOrgLeaderboard(orgId: number, userKey: string): Promise<{ org_name: string; total_sops: number; entries: LeaderboardEntry[] }> {
   const params = new URLSearchParams({ user_key: userKey });
   const res = await fetch(`${LMS_URL}/api/orgs/${orgId}/leaderboard?${params}`);

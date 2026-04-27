@@ -325,7 +325,12 @@ const ManagerDashboard: FC = () => {
                     maxWidth: 100, minWidth: 90,
                     wordBreak: 'break-word',
                   }}>
-                    <div>{sop.title.length > 20 ? `${sop.title.slice(0, 20)}…` : sop.title}</div>
+                    <button
+                      onClick={() => navigate(`/sop/${sop.id}/details`)}
+                      style={{ background: 'none', border: 'none', padding: 0, fontWeight: 700, fontSize: 13, color: 'var(--primary)', cursor: 'pointer', textAlign: 'center', textDecoration: 'underline' }}
+                    >
+                      {sop.title.length > 20 ? `${sop.title.slice(0, 20)}…` : sop.title}
+                    </button>
                     <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>
                       {sop.completed_count}/{sop.employee_count}
                       {sop.avg_score_pct !== null ? ` · ${sop.avg_score_pct}%` : ''}
