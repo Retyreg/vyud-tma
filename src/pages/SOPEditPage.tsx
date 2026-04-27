@@ -143,6 +143,11 @@ const SOPEditPage: FC = () => {
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Шаги ({steps.length})
           </div>
+          {steps.length === 0 && (
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13, border: '1px dashed var(--border)', borderRadius: 12 }}>
+              Нет шагов. Добавьте первый →
+            </div>
+          )}
           {steps.map((step, idx) => (
             <div key={step.step_number} style={{
               borderRadius: 14, border: '1px solid var(--border)',
@@ -178,6 +183,15 @@ const SOPEditPage: FC = () => {
                   >
                     <ChevronDown size={16} />
                   </button>
+                  <button
+                    onClick={() => {
+                      const updated = steps.filter((_, i) => i !== idx).map((s, i) => ({ ...s, step_number: i + 1 }));
+                      setSteps(updated);
+                    }}
+                    style={{ padding: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', display: 'flex' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
               <input
@@ -211,6 +225,19 @@ const SOPEditPage: FC = () => {
               />
             </div>
           ))}
+
+          <button
+            onClick={() => {
+              setSteps([...steps, { step_number: steps.length + 1, title: '', content: '' }]);
+            }}
+            style={{
+              padding: '12px', borderRadius: 12, border: '1px dashed var(--primary)',
+              background: 'var(--primary-light)', color: 'var(--primary)',
+              fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            }}
+          >
+            ➕ Добавить шаг
+          </button>
         </div>
       </div>
 
