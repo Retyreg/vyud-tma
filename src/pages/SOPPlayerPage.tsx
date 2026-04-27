@@ -9,7 +9,7 @@ import type { SOPWithSteps, QuizQuestion } from '../api/sop';
 const letterToIndex = (letter: string) => Math.max(0, 'ABCD'.indexOf(letter.toUpperCase()));
 import { ChevronLeft, Loader2 } from 'lucide-react';
 
-type Mode = 'steps' | 'quiz' | 'done';
+type Mode = 'intro' | 'steps' | 'quiz' | 'done';
 
 const SOPPlayerPage: FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,7 +23,7 @@ const SOPPlayerPage: FC = () => {
   const [certToken, setCertToken] = useState<string | null>(null);
 
   // Steps state
-  const [mode, setMode] = useState<Mode>('steps');
+  const [mode, setMode] = useState<Mode>('intro');
   const [stepIndex, setStepIndex] = useState(0);
 
   // Quiz state
@@ -60,6 +60,7 @@ const SOPPlayerPage: FC = () => {
         const data = await fetchSOP(Number(id));
         data.steps = [...data.steps].sort((a, b) => a.step_number - b.step_number);
         setSop(data);
+        if (!data.description?.trim()) setMode('steps');
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -260,6 +261,47 @@ const SOPPlayerPage: FC = () => {
       </div>
     </>
   );
+
+  // ── Intro mode ───────────────────────────────────────────────────────────
+
+  if (mode === 'intro') {
+    return (
+      <div style={{
+        minHeight: '100vh', background: 'var(--tg-theme-bg-color, var(--bg))',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        <Header subtitle="О регламенте" onBack={() => navigate(-1)} />
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <span style={{ fontSize: 48 }}>📋</span>
+          <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{sop.title}</h2>
+          {sop.description && (
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+              {sop.description}
+            </p>
+          )}
+          <div style={{
+            display: 'flex', gap: 14, padding: '12px 14px', borderRadius: 12,
+            background: 'var(--primary-light)', border: '1px solid var(--border)',
+            fontSize: 13, color: 'var(--text)',
+          }}>
+            <span>📖 {steps.length} {steps.length === 1 ? 'шаг' : steps.length < 5 ? 'шага' : 'шагов'}</span>
+            {hasQuiz && <span>· ❓ {questions.length} {questions.length === 1 ? 'вопрос' : questions.length < 5 ? 'вопроса' : 'вопросов'}</span>}
+          </div>
+        </div>
+        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--tg-theme-bg-color, var(--card))', flexShrink: 0 }}>
+          <button
+            onClick={() => setMode('steps')}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 12, fontWeight: 700, fontSize: 15,
+              background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Начать →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Steps mode ───────────────────────────────────────────────────────────
 
