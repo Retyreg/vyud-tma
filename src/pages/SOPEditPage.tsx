@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
-import { fetchSOP, updateSOP, deleteSOP } from '../api/sop';
+import { fetchSOP, updateSOP, deleteSOP, duplicateSOP } from '../api/sop';
 import type { SOPStep } from '../api/sop';
-import { ChevronLeft, Loader2, Trash2 } from 'lucide-react';
+import { ChevronLeft, Loader2, Trash2, Copy } from 'lucide-react';
 
 const SOPEditPage: FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +14,7 @@ const SOPEditPage: FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -44,6 +45,19 @@ const SOPEditPage: FC = () => {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!id || !userKey) return;
+    setDuplicating(true);
+    try {
+      const r = await duplicateSOP(Number(id), userKey);
+      navigate(`/sop/${r.sop_id}/edit`, { replace: true });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -85,6 +99,13 @@ const SOPEditPage: FC = () => {
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>Редактировать СОП</p>
         </div>
+        <button
+          onClick={handleDuplicate}
+          disabled={duplicating}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center', color: 'var(--text-secondary)' }}
+        >
+          {duplicating ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Copy size={18} />}
+        </button>
         <button
           onClick={() => setShowDeleteConfirm(true)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center', color: '#dc2626' }}

@@ -297,6 +297,13 @@ export async function updateSOP(
   if (!res.ok) throw new Error('Не удалось сохранить изменения');
 }
 
+export async function duplicateSOP(sopId: number, userKey: string): Promise<{ sop_id: number; title: string }> {
+  const params = new URLSearchParams({ user_key: userKey });
+  const res = await fetch(`${LMS_URL}/api/sops/${sopId}/duplicate?${params}`, { method: 'POST' });
+  if (!res.ok) throw new Error('Не удалось дублировать');
+  return res.json();
+}
+
 export async function deleteSOP(sopId: number, userKey: string): Promise<void> {
   const params = new URLSearchParams({ user_key: userKey });
   const res = await fetch(`${LMS_URL}/api/sops/${sopId}?${params}`, { method: 'DELETE' });
