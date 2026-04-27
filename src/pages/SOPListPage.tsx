@@ -67,12 +67,25 @@ const SOPListPage: FC = () => {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: '60vh', flexDirection: 'column', gap: 12,
-      }}>
-        <Loader2 size={32} color="var(--primary)" style={{ animation: 'spin 0.8s linear infinite' }} />
-        <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>Загрузка регламентов...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ height: 24, width: '40%', borderRadius: 6, background: 'var(--border)', opacity: 0.4, animation: 'pulse 1.4s ease-in-out infinite' }} />
+        <div style={{ height: 14, width: '25%', borderRadius: 4, background: 'var(--border)', opacity: 0.4, marginBottom: 8 }} />
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{
+            padding: '14px 16px', borderRadius: 14, border: '1px solid var(--border)',
+            background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+            display: 'flex', gap: 12, alignItems: 'flex-start',
+            opacity: 0.6 - i * 0.1,
+            animation: 'pulse 1.4s ease-in-out infinite',
+          }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--border)', flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ height: 14, width: '70%', borderRadius: 4, background: 'var(--border)' }} />
+              <div style={{ height: 12, width: '90%', borderRadius: 4, background: 'var(--border)' }} />
+              <div style={{ height: 10, width: '40%', borderRadius: 4, background: 'var(--border)' }} />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
