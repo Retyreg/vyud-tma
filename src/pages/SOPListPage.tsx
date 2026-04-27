@@ -322,6 +322,12 @@ const SOPListPage: FC = () => {
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{
                     fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+                    background: 'var(--primary-light)', color: 'var(--primary)',
+                  }}>
+                    📖 {sop.steps_count} {sop.steps_count === 1 ? 'шаг' : sop.steps_count < 5 ? 'шага' : 'шагов'}
+                  </span>
+                  <span style={{
+                    fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
                     background: sop.status === 'published' ? '#dcfce7' : '#fef9c3',
                     color: sop.status === 'published' ? '#16a34a' : '#854d0e',
                   }}>
