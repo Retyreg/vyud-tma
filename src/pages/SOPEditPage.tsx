@@ -19,6 +19,7 @@ const SOPEditPage: FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [steps, setSteps] = useState<SOPStep[]>([]);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : '';
@@ -28,6 +29,7 @@ const SOPEditPage: FC = () => {
     fetchSOP(Number(id))
       .then((data) => {
         setTitle(data.title);
+        setDescription(data.description ?? '');
         setSteps([...data.steps].sort((a, b) => a.step_number - b.step_number));
       })
       .catch((e) => setError(e.message))
@@ -39,7 +41,7 @@ const SOPEditPage: FC = () => {
     setSaving(true);
     setError(null);
     try {
-      await updateSOP(Number(id), userKey, { title, steps });
+      await updateSOP(Number(id), userKey, { title, description, steps });
       navigate(-1);
     } catch (e: any) {
       setError(e.message);
@@ -134,6 +136,25 @@ const SOPEditPage: FC = () => {
               width: '100%', padding: '12px 14px', borderRadius: 12,
               border: '1px solid var(--border)', background: 'var(--tg-theme-secondary-bg-color, var(--card))',
               color: 'var(--text)', fontSize: 15, fontWeight: 600, boxSizing: 'border-box',
+            }}
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Описание (необязательно)
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Кратко о чём регламент"
+            rows={3}
+            style={{
+              width: '100%', padding: '12px 14px', borderRadius: 12,
+              border: '1px solid var(--border)', background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+              color: 'var(--text)', fontSize: 14, lineHeight: 1.5, resize: 'vertical',
+              boxSizing: 'border-box', fontFamily: 'inherit',
             }}
           />
         </div>
