@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { fetchSOP, updateSOP, deleteSOP, duplicateSOP } from '../api/sop';
 import type { SOPStep } from '../api/sop';
-import { ChevronLeft, Loader2, Trash2, Copy } from 'lucide-react';
+import { ChevronLeft, Loader2, Trash2, Copy, ChevronUp, ChevronDown } from 'lucide-react';
 
 const SOPEditPage: FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -149,8 +149,36 @@ const SOPEditPage: FC = () => {
               background: 'var(--tg-theme-secondary-bg-color, var(--card))',
               padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10,
             }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>
-                Шаг {step.step_number}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>
+                  Шаг {idx + 1}
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    onClick={() => {
+                      if (idx === 0) return;
+                      const updated = [...steps];
+                      [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
+                      setSteps(updated.map((s, i) => ({ ...s, step_number: i + 1 })));
+                    }}
+                    disabled={idx === 0}
+                    style={{ padding: 6, background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--border)' : 'var(--text-secondary)', display: 'flex' }}
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (idx === steps.length - 1) return;
+                      const updated = [...steps];
+                      [updated[idx], updated[idx + 1]] = [updated[idx + 1], updated[idx]];
+                      setSteps(updated.map((s, i) => ({ ...s, step_number: i + 1 })));
+                    }}
+                    disabled={idx === steps.length - 1}
+                    style={{ padding: 6, background: 'none', border: 'none', cursor: idx === steps.length - 1 ? 'default' : 'pointer', color: idx === steps.length - 1 ? 'var(--border)' : 'var(--text-secondary)', display: 'flex' }}
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
               </div>
               <input
                 value={step.title}
