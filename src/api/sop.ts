@@ -250,6 +250,16 @@ export interface SOPTemplateItem {
   quiz_count: number;
 }
 
+export interface SOPTemplateDetail extends SOPTemplateItem {
+  steps: { step_number: number; title: string; content: string }[];
+}
+
+export async function fetchTemplate(templateId: number): Promise<SOPTemplateDetail> {
+  const res = await fetch(`${LMS_URL}/api/templates/${templateId}`);
+  if (!res.ok) throw new Error('Не удалось загрузить шаблон');
+  return res.json();
+}
+
 export async function fetchTemplates(): Promise<SOPTemplateItem[]> {
   const res = await fetch(`${LMS_URL}/api/templates`);
   if (!res.ok) throw new Error('Не удалось загрузить шаблоны');

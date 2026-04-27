@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
-import { fetchTemplates, cloneTemplate } from '../api/sop';
-import type { SOPTemplateItem } from '../api/sop';
+import { fetchTemplates, cloneTemplate, fetchTemplate } from '../api/sop';
+import type { SOPTemplateItem, SOPTemplateDetail } from '../api/sop';
 import type { LmsOrg } from '../api/lms';
 import { Loader2, ChevronLeft } from 'lucide-react';
 import FreeLimitSheet from '../components/FreeLimitSheet';
@@ -26,6 +26,8 @@ const TemplatesPage: FC = () => {
   const [showLimitSheet, setShowLimitSheet] = useState(false);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState<number | null>(null);
+  const [preview, setPreview] = useState<SOPTemplateDetail | null>(null);
 
   const userKey = user?.telegram_id ? String(user.telegram_id) : '';
 
@@ -215,6 +217,21 @@ const TemplatesPage: FC = () => {
                       </div>
                     </div>
 
+                    <button
+                      onClick={async () => {
+                        setPreviewing(t.id);
+                        try { setPreview(await fetchTemplate(t.id)); }
+                        catch { /* ignore */ } finally { setPreviewing(null); }
+                      }}
+                      disabled={previewing === t.id}
+                      style={{
+                        flexShrink: 0, padding: '8px 10px', borderRadius: 10,
+                        fontWeight: 600, fontSize: 12, border: '1px solid var(--border)', cursor: 'pointer',
+                        background: 'var(--tg-theme-bg-color, var(--bg))', color: 'var(--text)',
+                      }}
+                    >
+                      {previewing === t.id ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : '👁'}
+                    </button>
                     {org?.is_manager && (
                       <button
                         onClick={() => handleClone(t)}
@@ -240,6 +257,72 @@ const TemplatesPage: FC = () => {
           </div>
         </div>
       ))}
+
+      {/* Preview bottom-sheet */}
+      {preview && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setPreview(null); }}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000,
+          }}
+        >
+          <div style={{
+            background: 'var(--bg)', borderRadius: '20px 20px 0 0',
+            padding: '20px', width: '100%', maxWidth: 500, maxHeight: '85vh', overflowY: 'auto',
+            display: 'flex', flexDirection: 'column', gap: 14,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <div>
+                <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{preview.title}</h3>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+                  {CATEGORY_LABELS[preview.category] ?? preview.category} · {preview.steps.length} шагов
+                </p>
+              </div>
+              <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text-secondary)' }}>×</button>
+            </div>
+            {preview.description && (
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                {preview.description}
+              </p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {preview.steps.map((s, i) => (
+                <div key={i} style={{
+                  padding: '12px 14px', borderRadius: 10,
+                  background: 'var(--tg-theme-secondary-bg-color, var(--card))',
+                  border: '1px solid var(--border)',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 4 }}>
+                    Шаг {s.step_number}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{s.title}</div>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {s.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {org?.is_manager && (
+              <button
+                onClick={() => {
+                  const item = templates.find((x) => x.id === preview.id);
+                  setPreview(null);
+                  if (item) handleClone(item);
+                }}
+                disabled={cloned.has(preview.id)}
+                style={{
+                  padding: '13px', borderRadius: 12, fontWeight: 700, fontSize: 15, border: 'none',
+                  background: cloned.has(preview.id) ? '#dcfce7' : 'var(--primary)',
+                  color: cloned.has(preview.id) ? '#16a34a' : 'white', cursor: 'pointer',
+                }}
+              >
+                {cloned.has(preview.id) ? '✓ Уже добавлен' : '+ Добавить в организацию'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
