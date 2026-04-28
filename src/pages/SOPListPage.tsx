@@ -224,11 +224,11 @@ const SOPListPage: FC = () => {
               onClick={() => setStatusFilter(f)}
               style={{
                 padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                border: 'none', cursor: 'pointer',
+                cursor: 'pointer',
                 background: statusFilter === f ? 'var(--primary)' : 'var(--tg-theme-secondary-bg-color, var(--card))',
                 color: statusFilter === f ? 'white' : 'var(--text-secondary)',
                 border: statusFilter === f ? 'none' : '1px solid var(--border)',
-              } as React.CSSProperties}
+              }}
             >
               {f === 'all' ? 'Все' : f === 'published' ? 'Опубликованы' : 'Черновики'}
             </button>
