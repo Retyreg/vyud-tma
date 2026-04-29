@@ -7,6 +7,7 @@ import type { LmsOrg } from '../api/lms';
 import { fetchOrgProgress, createAssignment, nudgeEmployee } from '../api/sop';
 import type { OrgProgress } from '../api/sop';
 import { Loader2, Copy, CheckCheck, Pencil, Download } from 'lucide-react';
+import { BOT_USERNAME } from '../lib/bot';
 
 const ManagerDashboard: FC = () => {
   const { user } = useAuthContext();
@@ -150,7 +151,6 @@ const ManagerDashboard: FC = () => {
     }
   };
 
-  const BOT_USERNAME = 'VyudAiBot';
   const inviteLink = org ? `https://t.me/${BOT_USERNAME}?startapp=invite_${org.invite_code}` : '';
 
   const handleCopyInvite = async () => {

@@ -7,6 +7,7 @@ import { fetchTemplates, cloneTemplate } from '../api/sop';
 import type { SOPTemplateItem } from '../api/sop';
 import { Loader2 } from 'lucide-react';
 import FreeLimitSheet from '../components/FreeLimitSheet';
+import { BOT_USERNAME } from '../lib/bot';
 
 type Step = 'name' | 'template' | 'invite';
 
@@ -37,7 +38,7 @@ const OnboardingPage: FC = () => {
     try {
       const created = await createOrg(orgName.trim(), userKey);
       setOrg(created);
-      const link = `https://t.me/VyudAiBot?startapp=invite_${created.invite_code}`;
+      const link = `https://t.me/${BOT_USERNAME}?startapp=invite_${created.invite_code}`;
       setInviteLink(link);
       localStorage.setItem('vyud_org', JSON.stringify({
         org_id: created.org_id,

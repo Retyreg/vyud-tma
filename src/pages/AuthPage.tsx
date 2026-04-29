@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { isTMA } from '../lib/telegram';
+import { BOT_USERNAME } from '../lib/bot';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
@@ -141,7 +142,7 @@ const AuthPage: FC = () => {
 
         <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
           Или откройте приложение в{' '}
-          <a href="https://t.me/VyudAiBot" style={{ color: 'var(--primary)', fontWeight: 600 }}>@VyudAiBot</a>{' '}
+          <a href={`https://t.me/${BOT_USERNAME}`} style={{ color: 'var(--primary)', fontWeight: 600 }}>@{BOT_USERNAME}</a>{' '}
           — авторизация автоматическая
         </p>
       </div>
